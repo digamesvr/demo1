@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="https://aframe.io/releases/1.4.0/aframe.min.js">
+  </script>
+</head>
+
+<body>
+overlay in front of scene, start transparent
+<div id="Fade" style="position:fixed; top:0px; 
+  width:100%; height:100%; z-index:1; display:flex;
+  background-color: rgba(0,0,0,0);"></div>
+
+<a-scene>
+	 <a-box position="-1 0.5 -3"  color="red"></a-box>
+</a-scene>
+
+<script> 
+
+function fade(color, msec) {
+	let fader = document.getElementById("Fade");
+	fader.style["background-color"] = color;
+	fader.style["transition"] = "background-color linear " + msec + "ms";
+}
+
+// example: fade to solid color
+setTimeout(() => {fade("rgba(0, 255, 0, 1)", 1000)}, 2000);
+
+// fade to transparent (show scene)
+setTimeout(() => {fade("rgba(0, 0, 0, 0)", 500)}, 4000);
+
+</script>
+</body>
+</html>
