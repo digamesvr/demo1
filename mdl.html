@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<!-- basic model demo -->
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+  </head>
+  <body>
+   <a-scene renderer="antialias: true">
+     
+      <a-assets>
+        <a-asset-item id="tabmdl"
+        src="https://digamesvr.github.io/demo1/models/tablet.glb"
+        ></a-asset-item>
+       <img id="sky" crossorigin="anonymous" src=
+           "https://digamesvr.github.io/demo1/images/nebula.jpg"
+        >
+      </a-assets>
+
+     <!-- stars -->
+     <a-plane src="#sky" height="1000" width="2000" position="-500 0 0" 
+              rotation="0 90 0"></a-plane>
+
+     <a-entity id="tablet" 
+          gltf-model="#tabmdl" scale=".5 .5 .5" 
+          animation="property: scale; from: 0 0 0; to: .5 .5 .5;
+                     dir: normal; easing: linear; dur: 250; startEvents: reset"
+          >
+     </a-entity>
+
+
+     <!-- lights -->
+     <a-entity light="type: ambient; color: #BBB; intensity: 0.4"></a-entity>
+     <a-entity light="intensity: 0.4; castShadow: true" position="-0.5 1 1"></a-entity>
+     <a-entity light="intensity: 0.4" position="-11 6 -14"></a-entity>
+     <a-entity light="type: point; intensity: 1.5" position="8 0 -25"></a-entity>
+
+     </a-scene>
+  </body>
+</html>
