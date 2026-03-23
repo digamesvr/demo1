@@ -34,13 +34,17 @@ AFRAME.registerComponent('joyctl', {
 		
 		this.rcon.addEventListener('gripdown', function(evt) {
 			console.log('Grip down');
+			// if close enough
+			this.active = true;
 		});
 		this.rcon.addEventListener('gripup', function(evt) {
 			console.log('Grip up');
+			this.active = false;
 		});
 	},
 	
 	tick: function (time, delta) {
+		if (!this.active) return;
 		// for now always grabbed by rhand
 		// force into valid range
 		let cpos = this.rcon.object3D.position
