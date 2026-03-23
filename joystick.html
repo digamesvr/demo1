@@ -31,14 +31,21 @@ AFRAME.registerComponent('joyctl', {
 		this.lcon = document.querySelector("#LHand");
 		this.rcon = document.querySelector("#RHand");
 		this.stick = document.querySelector("#joystick");
+		
+		this.rcon.addEventListener('gripdown', function(evt) {
+			console.log('Grip down');
+		});
+		this.rcon.addEventListener('gripup', function(evt) {
+			console.log('Grip up');
+		});
 	},
 	
 	tick: function (time, delta) {
 		// for now always grabbed by rhand
 		// force into valid range
 		let cpos = this.rcon.object3D.position
-		cpos.x = clamp(cpos.x, this.ref.x, 0.75);
-		cpos.z = clamp(cpos.z, this.ref.z, 0.75);
+		cpos.x = clamp(cpos.x, this.ref.x, 0.25);
+		cpos.z = clamp(cpos.z, this.ref.z, 0.25);
 		cpos.y = clamp(cpos.y, this.ref.y, 0.05);
 
 		// hand pos rel to stick center
