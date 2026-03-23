@@ -20,7 +20,7 @@ AFRAME.registerComponent('joyctl', {
 	init: function () {
 		console.log("jc init");
 		jc = this;
-		this.active = true;
+		this.active = false;
 		this.tvec = new THREE.Vector3();
 		this.ref = new THREE.Vector3(0, 0.5, -0.5);	// joystick top when centered
 		this.controllerData = this.el.components["controller-listener"];
@@ -32,30 +32,44 @@ AFRAME.registerComponent('joyctl', {
 		this.rcon = document.querySelector("#RHand");
 		this.stick = document.querySelector("#joystick");
 		
-		this.rcon.addEventListener('gripdown', function(evt) {
+		this.rcon.addEventListener('gripdown', (event) => {
 			console.log('Grip down');
-			// if close enough
-			this.active = true;
+			if (this.rcon.object3D.position.distanceToSquared(this.ref) < 0.02) {
+				this.active = true;
+			}
 		});
-		this.rcon.addEventListener('gripup', function(evt) {
+		this.rcon.addEventListener('gripup', (event) => {
 			console.log('Grip up');
 			this.active = false;
 		});
 	},
 	
 	tick: function (time, delta) {
-		if (!this.active) return;
-		// for now always grabbed by rhand
-		// force into valid range
-		let cpos = this.rcon.object3D.position
-		cpos.x = clamp(cpos.x, this.ref.x, 0.25);
-		cpos.z = clamp(cpos.z, this.ref.z, 0.25);
-		cpos.y = clamp(cpos.y, this.ref.y, 0.05);
+		let crot = this.stick.object3D.rotation;
+		if (this.active) {
+			// force into valid range
+			let cpos = this.rcon.object3D.position
+			cpos.x = clamp(cpos.x, this.ref.x, 0.25);
+			cpos.z = clamp(cpos.z, this.ref.z, 0.25);
+			cpos.y = clamp(cpos.y, this.ref.y, 0.05);
 
-		// hand pos rel to stick center
-		this.tvec.subVectors(cpos, this.ref);
-		this.stick.object3D.rotation.z = -Math.asin(this.tvec.x)*2.0;	// / height
-		this.stick.object3D.rotation.x = Math.asin(this.tvec.z)*2.0;
+			// hand pos rel to stick center
+			this.tvec.subVectors(cpos, this.ref);
+			crot.z = -Math.asin(this.tvec.x)*2.0;	// / height
+			crot.x = Math.asin(this.tvec.z)*2.0;
+		} else {
+			// inactive, auto return to center
+			if (crot.x > 0.005) {
+				crot.x -= 0.005;
+			} else if (crot.x < -0.005) {
+				crot.x += 0.005;
+			}
+			if (crot.z > 0.005) {
+				crot.z -= 0.005;
+			} else if (crot.z < -0.005) {
+				crot.z += 0.005;
+			}
+		}
 	}
 });
 
