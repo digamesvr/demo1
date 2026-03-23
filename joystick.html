@@ -5,34 +5,46 @@
 
 <script>
 let jc = 0;  // temp debug
- 
+
+// force value into range ref-delta, ref+delta
+function clamp(val, ref, delta) {
+	if (val < ref - delta) {
+		return ref - delta;
+	} else if (val > ref + delta) {
+		return ref + delta;
+	}
+	return val;
+}
+
 AFRAME.registerComponent('joyctl', {
 	init: function () {
 		console.log("jc init");
 		jc = this;
 		this.active = true;
 		this.tvec = new THREE.Vector3();
-		this.ref = new THREE.Vector3(0, 0.5, -2);	// joystick top when centered
+		this.ref = new THREE.Vector3(0, 0.5, -0.5);	// joystick top when centered
 		this.controllerData = this.el.components["controller-listener"];
+		this.el.setAttribute('visible', false);
 	},
 	
 	update: function () {
 		this.lcon = document.querySelector("#LHand");
 		this.rcon = document.querySelector("#RHand");
-		//this.rcon.setAttribute('visible', 'true')
 		this.stick = document.querySelector("#joystick");
 	},
 	
 	tick: function (time, delta) {
 		// for now always grabbed by rhand
+		// force into valid range
+		let cpos = this.rcon.object3D.position
+		cpos.x = clamp(cpos.x, this.ref.x, 0.75);
+		cpos.z = clamp(cpos.z, this.ref.z, 0.75);
+		cpos.y = clamp(cpos.y, this.ref.y, 0.05);
+
 		// hand pos rel to stick center
-		this.tvec.subVectors(this.rcon.object3D.position, this.ref);
-		if (Math.abs(this.tvec.x) < 0.75) {
-			this.stick.object3D.rotation.z = -Math.asin(this.tvec.x)*1.0;
-		}
-		if (Math.abs(this.tvec.z) < 0.75) {
-			this.stick.object3D.rotation.x = Math.asin(this.tvec.z)*1.0;
-		}
+		this.tvec.subVectors(cpos, this.ref);
+		this.stick.object3D.rotation.z = -Math.asin(this.tvec.x)*2.0;	// / height
+		this.stick.object3D.rotation.x = Math.asin(this.tvec.z)*2.0;
 	}
 });
 
@@ -43,22 +55,27 @@ AFRAME.registerComponent('joyctl', {
 <a-scene renderer="colorManagement: true; antialias: true" background>
 	
 	<a-entity hello-world></a-entity>
-	<a-entity id="joystick" position="0 0 -2"> <!-- rotate that, X=pitch up, Z=roll L-->
-		<a-cylinder color="white" height="0.5" radius="0.02" position="0 0.25 0">
+	<a-entity id="joystick" position="0 0 -0.5"> <!-- rotate that, X=pitch up, Z=roll L-->
+		<a-cylinder height="0.5" radius="0.02" position="0 0.25 0"
+			material="color: #899dcd; metalness: 0.7" 
+			geometry="segmentsHeight: 1; segmentsRadial: 8">
+		</a-cylinder>
+		<a-cylinder height="0.14" radius="0.03" position="0 0.56 0"
+			material="color: #202020; metalness: 0.1" 
+			geometry="segmentsHeight: 1; segmentsRadial: 16">
 		</a-cylinder>
 		<a-entity id="jc" joyctl></a-entity>
 	</a-entity>
 	
 	<a-entity id="LHand" hand-controls="hand: left; 
-		color: #408080; handModelStyle: highPoly; autoHide=false"></a-entity>
+		color: #696145; handModelStyle: highPoly; autoHide=false"></a-entity>
 	<a-entity id="RHand" hand-controls="hand: right;
-		color: #408080; handModelStyle: highPoly; autoHide=false"></a-entity>
+		color: #696145; handModelStyle: highPoly; autoHide=false"></a-entity>
 	
-	<a-sky color="#202020"></a-sky>
+	<a-sky color="#404040"></a-sky>
 </a-scene>
 
 <!--
-visible false for joyctl?
 -->
 <script>
 </script>
