@@ -1,0 +1,65 @@
+<!doctype html>
+<html><!-- joystick test -->
+<head>
+<script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script>
+
+<script>
+let jc = 0;  // temp debug
+ 
+AFRAME.registerComponent('joyctl', {
+	init: function () {
+		console.log("jc init");
+		jc = this;
+		this.active = true;
+		this.tvec = new THREE.Vector3();
+		this.ref = new THREE.Vector3(0, 0.5, -2);	// joystick top when centered
+		this.controllerData = this.el.components["controller-listener"];
+	},
+	
+	update: function () {
+		this.lcon = document.querySelector("#LHand");
+		this.rcon = document.querySelector("#RHand");
+		//this.rcon.setAttribute('visible', 'true')
+		this.stick = document.querySelector("#joystick");
+	},
+	
+	tick: function (time, delta) {
+		// for now always grabbed by rhand
+		// hand pos rel to stick center
+		this.tvec.subVectors(this.rcon.object3D.position, this.ref);
+		if (Math.abs(this.tvec.x) < 0.75) {
+			this.stick.object3D.rotation.z = -Math.asin(this.tvec.x)*1.0;
+		}
+		if (Math.abs(this.tvec.z) < 0.75) {
+			this.stick.object3D.rotation.x = Math.asin(this.tvec.z)*1.0;
+		}
+	}
+});
+
+</script>
+</head>
+<body>	
+
+<a-scene renderer="colorManagement: true; antialias: true" background>
+	
+	<a-entity hello-world></a-entity>
+	<a-entity id="joystick" position="0 0 -2"> <!-- rotate that, X=pitch up, Z=roll L-->
+		<a-cylinder color="white" height="0.5" radius="0.02" position="0 0.25 0">
+		</a-cylinder>
+		<a-entity id="jc" joyctl></a-entity>
+	</a-entity>
+	
+	<a-entity id="LHand" hand-controls="hand: left; 
+		color: #408080; handModelStyle: highPoly; autoHide=false"></a-entity>
+	<a-entity id="RHand" hand-controls="hand: right;
+		color: #408080; handModelStyle: highPoly; autoHide=false"></a-entity>
+	
+	<a-sky color="#202020"></a-sky>
+</a-scene>
+
+<!--
+visible false for joyctl?
+-->
+<script>
+</script>
+</body></html>
