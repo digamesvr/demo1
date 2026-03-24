@@ -2,7 +2,7 @@
 <html><!-- joystick test -->
 <head>
 <script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script>
-
+<script src="https://unpkg.com/aframe-environment-component@1.5.x/dist/aframe-environment-component.min.js"></script>
 <script>
 let jc = 0;  // temp debug
 
@@ -77,9 +77,25 @@ AFRAME.registerComponent('joyctl', {
 </head>
 <body>	
 
-<a-scene renderer="colorManagement: true; antialias: true" background>
-	
-	<a-entity hello-world></a-entity>
+<a-scene renderer="colorManagement: true; antialias: true">
+
+	<a-assets>
+	<!-- fixme equirectangular https://www.spacespheremaps.com/ -->
+	<img id="sky" crossorigin="anonymous" src=
+	   "https://digamesvr.github.io/demo1/images/multi_nebulae_3.jpg"
+	>
+	</a-assets>
+	  
+
+	<a-entity id="env" environment="preset: volcano; skyType: none; fog: 0" scale="4 4 4">
+	</a-entity>
+	<a-sky src="#sky" material="depthWrite: false; 
+		blending: none; dithering: false; fog: false"></a-sky>
+
+	<!-- simple lighting, can move sun for time-of-day sim -->
+	<a-entity light="type: ambient; color: #444"></a-entity>
+	<a-entity light="type: directional; color: #FFF; intensity: 0.6" position="-.5 1 1"></a-entity>	
+	  
 	<a-entity id="joystick" position="0 0 -0.5"> <!-- rotate that, X=pitch up, Z=roll L-->
 		<a-cylinder height="0.5" radius="0.02" position="0 0.25 0"
 			material="color: #899dcd; metalness: 0.7" 
@@ -97,11 +113,9 @@ AFRAME.registerComponent('joyctl', {
 	<a-entity id="RHand" hand-controls="hand: right;
 		color: #696145; handModelStyle: highPoly; autoHide=false"></a-entity>
 	
-	<a-sky color="#404040"></a-sky>
 </a-scene>
 
 <!--
+
 -->
-<script>
-</script>
 </body></html>
