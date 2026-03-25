@@ -5,6 +5,7 @@
 <script src="https://unpkg.com/aframe-environment-component@1.5.x/dist/aframe-environment-component.min.js"></script>
 <script>
 let jc = 0;  // temp debug
+let p = 0;
 
 // force value into range ref-delta, ref+delta
 function clamp(val, ref, delta) {
@@ -18,11 +19,10 @@ function clamp(val, ref, delta) {
 
 AFRAME.registerComponent('joyctl', {
 	init: function () {
-		console.log("jc init");
 		jc = this;
 		this.active = false;
 		this.tvec = new THREE.Vector3();
-		this.ref = new THREE.Vector3(0, 0.5, -0.5);	// joystick top when centered
+		this.ref = new THREE.Vector3(0, 1.3, -0.5);	// joystick top when centered
 		this.controllerData = this.el.components["controller-listener"];
 		this.el.setAttribute('visible', false);
 	},
@@ -33,8 +33,9 @@ AFRAME.registerComponent('joyctl', {
 		this.stick = document.querySelector("#joystick");
 		
 		this.rcon.addEventListener('gripdown', (event) => {
-			console.log('Grip down');
-			if (this.rcon.object3D.position.distanceToSquared(this.ref) < 0.02) {
+			console.log('Grip down', this.rcon.object3D.position);
+			const grabDist2 = 0.1; // 0.02;
+			if (this.rcon.object3D.position.distanceToSquared(this.ref) < grabDist2) {
 				this.active = true;
 			}
 		});
@@ -73,6 +74,47 @@ AFRAME.registerComponent('joyctl', {
 	}
 });
 
+AFRAME.registerComponent('pilot', {
+	schema: {
+		rotrate: { default: 0.002 },	// rotation rate deg/msec per joy deg
+		speed: { default: 0.001 },		// linear speed, m/msec
+	},
+	
+	init: function () {
+		p = this;
+		this.wvel = new THREE.Vector3(0, 0, -this.data.speed);	// linear velocity, world frame
+		this.wpos = this.el.object3D.position;		// world position
+		this.wrot = this.el.object3D.quaternion;	// world orientation
+	},
+	
+	update: function () {
+		this.stick = document.querySelector("#joystick");
+	},
+	
+	tick: function (time, delta) {
+		//if (!this.el.sceneEl.is("vr-mode")) return;
+
+		// rotate wrot and wvel from joystick
+		q = this.stick.object3D.quaternion;
+		const angle = 2 * Math.acos(q.w);
+		if (Math.abs(angle) < 0.0001) {
+			x = 0; y = 1; z = 0;
+		} else {
+			const s = Math.sqrt(1 - q.w * q.w);
+			x = q.x / s;
+			y = q.y / s;
+			z = q.z / 2;
+		}
+		axis = new THREE.Vector3(x, y, z);
+		q = new THREE.Quaternion().setFromAxisAngle(axis, angle*delta*this.data.rotrate);
+		this.wrot.multiply(q);
+		this.wvel.multiply(q);
+		
+		// move along velocity
+		this.wpos.addScaledVector(this.wvel, delta);
+	}
+});
+
 </script>
 </head>
 <body>	
@@ -80,7 +122,7 @@ AFRAME.registerComponent('joyctl', {
 <a-scene renderer="colorManagement: true; antialias: true">
 
 	<a-assets>
-	<!-- fixme equirectangular https://www.spacespheremaps.com/ -->
+	<!-- https://www.spacespheremaps.com/ -->
 	<img id="sky" crossorigin="anonymous" src=
 	   "https://digamesvr.github.io/demo1/images/multi_nebulae_3.jpg"
 	>
@@ -89,29 +131,50 @@ AFRAME.registerComponent('joyctl', {
 
 	<a-entity id="env" environment="preset: volcano; skyType: none; fog: 0" scale="4 4 4">
 	</a-entity>
-	<a-sky src="#sky" material="depthWrite: false; 
-		blending: none; dithering: false; fog: false"></a-sky>
 
-	<!-- simple lighting, can move sun for time-of-day sim -->
+	<!-- world frame -->
+	
+	<!-- world lighting, can move sun for time-of-day sim -->
 	<a-entity light="type: ambient; color: #444"></a-entity>
 	<a-entity light="type: directional; color: #FFF; intensity: 0.6" position="-.5 1 1"></a-entity>	
 	  
-	<a-entity id="joystick" position="0 0 -0.5"> <!-- rotate that, X=pitch up, Z=roll L-->
-		<a-cylinder height="0.5" radius="0.02" position="0 0.25 0"
-			material="color: #899dcd; metalness: 0.7" 
-			geometry="segmentsHeight: 1; segmentsRadial: 8">
-		</a-cylinder>
-		<a-cylinder height="0.14" radius="0.03" position="0 0.56 0"
-			material="color: #202020; metalness: 0.1" 
-			geometry="segmentsHeight: 1; segmentsRadial: 16">
-		</a-cylinder>
-		<a-entity id="jc" joyctl></a-entity>
-	</a-entity>
+	<!-- ship position (temp motion) -->
+	<a-entity id="meP"
+		position="0 5 100"
+		>
+		<!--animation="property: position; to: 0 20 -200; dur: 10000; loop: true" -->
+
+		<!-- space background moves with ship -->
+		<a-sky src="#sky" material="depthWrite: false; 
+			blending: none; dithering: false; fog: false"></a-sky>
+
+		<!-- ship orientation -->
+		<a-entity id="meR" pilot>
+			<!-- ship lighting -->
+			
+			<!-- ship cockpit -->
+			<a-entity id="joystick" position="0 -.75 -0.5">
+				<a-cylinder height="0.5" radius="0.02" position="0 0.25 0"
+					material="color: #899dcd; metalness: 0.7" 
+					geometry="segmentsHeight: 1; segmentsRadial: 8">
+				</a-cylinder>
+				<a-cylinder height="0.14" radius="0.03" position="0 0.56 0"
+					material="color: #202020; metalness: 0.1" 
+					geometry="segmentsHeight: 1; segmentsRadial: 16">
+				</a-cylinder>
+				<a-entity id="jc" joyctl></a-entity>
+			</a-entity>
 	
-	<a-entity id="LHand" hand-controls="hand: left; 
-		color: #696145; handModelStyle: highPoly; autoHide=false"></a-entity>
-	<a-entity id="RHand" hand-controls="hand: right;
-		color: #696145; handModelStyle: highPoly; autoHide=false"></a-entity>
+			<a-entity position="0 -1.5 0">
+			<!-- VR headset/controllers -->
+			<a-camera> </a-camera>
+			<a-entity id="LHand" hand-controls="hand: left; 
+				color: #696145; handModelStyle: highPoly; autoHide=false"></a-entity>
+			<a-entity id="RHand" hand-controls="hand: right;
+				color: #696145; handModelStyle: highPoly; autoHide=false"></a-entity>
+			</a-entity>
+		</a-entity>
+	</a-entity>
 	
 </a-scene>
 
