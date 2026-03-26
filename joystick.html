@@ -17,6 +17,7 @@ function clamp(val, ref, delta) {
 	return val;
 }
 
+// update joystick from hand motion
 AFRAME.registerComponent('joyctl', {
 	init: function () {
 		jc = this;
@@ -74,10 +75,11 @@ AFRAME.registerComponent('joyctl', {
 	}
 });
 
+// update ship motion
 AFRAME.registerComponent('pilot', {
 	schema: {
 		rotrate: { default: 0.002 },	// rotation rate deg/msec per joy deg
-		speed: { default: 0.001 },		// linear speed, m/msec
+		speed: { default: 0.002 },		// linear speed, m/msec
 	},
 	
 	init: function () {
@@ -93,10 +95,12 @@ AFRAME.registerComponent('pilot', {
 	
 	tick: function (time, delta) {
 		//if (!this.el.sceneEl.is("vr-mode")) return;
+		
+		// FIXME no news in here
 
 		// rotate wrot and wvel from joystick
 		q = this.stick.object3D.quaternion;
-		const angle = 2 * Math.acos(q.w);
+		let angle = 2 * Math.acos(q.w);
 		if (Math.abs(angle) < 0.0001) {
 			x = 0; y = 1; z = 0;
 		} else {
@@ -106,12 +110,41 @@ AFRAME.registerComponent('pilot', {
 			z = q.z / 2;
 		}
 		axis = new THREE.Vector3(x, y, z);
-		q = new THREE.Quaternion().setFromAxisAngle(axis, angle*delta*this.data.rotrate);
+		angle *= delta * this.data.rotrate;
+		// rotate ship in ship frame
+		q = new THREE.Quaternion().setFromAxisAngle(axis, angle);
 		this.wrot.multiply(q);
-		this.wvel.multiply(q);
+		// rotate velocity in world frame
+		// THIS is for object3d! this.wvel.rotateOnWorldAxis(axis, angle);
+		wq = new THREE.Quaternion();
+		this.el.object3D.getWorldQuaternion(wq);
+		wq.multiply(q);
+		this.wvel.applyQuaternion(wq);
 		
 		// move along velocity
 		this.wpos.addScaledVector(this.wvel, delta);
+	}
+});
+
+// calibrate user position
+AFRAME.registerComponent('thumb-events',{
+	init: function () {
+		this.el.addEventListener('thumbstickmoved', (event) => {
+			this.getStick(event);
+		});
+	},
+	update: function () {
+		this.pos = document.querySelector("#vrpos");
+		this.dpos = 0.01
+	},
+	getStick: function (evt) {
+		pos = this.pos.object3D.position;
+		if (evt.srcElement.id == "LHand") {	// adjust VR offset
+			if (evt.detail.y > 0.95) { pos.y -= this.dpos; }
+			else if (evt.detail.y < -0.95) { pos.y += this.dpos; }
+			if (evt.detail.x < -0.95) { pos.z += this.dpos; }
+			else if (evt.detail.x > 0.95) { pos.z -= this.dpos; }
+		}
 	}
 });
 
@@ -138,11 +171,8 @@ AFRAME.registerComponent('pilot', {
 	<a-entity light="type: ambient; color: #444"></a-entity>
 	<a-entity light="type: directional; color: #FFF; intensity: 0.6" position="-.5 1 1"></a-entity>	
 	  
-	<!-- ship position (temp motion) -->
-	<a-entity id="meP"
-		position="0 5 100"
-		>
-		<!--animation="property: position; to: 0 20 -200; dur: 10000; loop: true" -->
+	<!-- ship position -->
+	<a-entity id="meP" position="0 5 100">
 
 		<!-- space background moves with ship -->
 		<a-sky src="#sky" material="depthWrite: false; 
@@ -150,10 +180,9 @@ AFRAME.registerComponent('pilot', {
 
 		<!-- ship orientation -->
 		<a-entity id="meR" pilot>
-			<!-- ship lighting -->
+			<!-- ship frame - lighting, cockpit; ref = floor under pilot -->
 			
-			<!-- ship cockpit -->
-			<a-entity id="joystick" position="0 -.75 -0.5">
+			<a-entity id="joystick" position="0 0 -0.5">
 				<a-cylinder height="0.5" radius="0.02" position="0 0.25 0"
 					material="color: #899dcd; metalness: 0.7" 
 					geometry="segmentsHeight: 1; segmentsRadial: 8">
@@ -165,13 +194,15 @@ AFRAME.registerComponent('pilot', {
 				<a-entity id="jc" joyctl></a-entity>
 			</a-entity>
 	
-			<a-entity position="0 -1.5 0">
-			<!-- VR headset/controllers -->
+			<!-- VR headset/controllers with adjustable offset -->
+			<a-entity id="vrpos" position="0 -0.5 0">
 			<a-camera> </a-camera>
 			<a-entity id="LHand" hand-controls="hand: left; 
-				color: #696145; handModelStyle: highPoly; autoHide=false"></a-entity>
+				color: #696145; handModelStyle: highPoly; autoHide=false"
+				thumb-events></a-entity>
 			<a-entity id="RHand" hand-controls="hand: right;
-				color: #696145; handModelStyle: highPoly; autoHide=false"></a-entity>
+				color: #696145; handModelStyle: highPoly; autoHide=false"
+				thumb-events></a-entity>
 			</a-entity>
 		</a-entity>
 	</a-entity>
@@ -179,6 +210,9 @@ AFRAME.registerComponent('pilot', {
 </a-scene>
 
 <!--
+temp ship motion
+<!--animation="property: position; to: 0 20 -200; dur: 10000; loop: true" -->
+
 
 -->
 </body></html>
