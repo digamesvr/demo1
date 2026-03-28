@@ -7,6 +7,9 @@
 let jc = 0;  // temp debug
 let p = 0;
 
+// joystick handle ref position in vrpos frame
+let jsref = new THREE.Vector3(0, 1.0, -0.5);
+
 // force value into range ref-delta, ref+delta
 function clamp(val, ref, delta) {
 	if (val < ref - delta) {
@@ -23,7 +26,6 @@ AFRAME.registerComponent('joyctl', {
 		jc = this;
 		this.active = false;
 		this.tvec = new THREE.Vector3();
-		this.ref = new THREE.Vector3(0, 1.3, -0.5);	// joystick top when centered
 		this.controllerData = this.el.components["controller-listener"];
 		this.el.setAttribute('visible', false);
 	},
@@ -36,7 +38,7 @@ AFRAME.registerComponent('joyctl', {
 		this.rcon.addEventListener('gripdown', (event) => {
 			console.log('Grip down', this.rcon.object3D.position);
 			const grabDist2 = 0.1; // 0.02;
-			if (this.rcon.object3D.position.distanceToSquared(this.ref) < grabDist2) {
+			if (this.rcon.object3D.position.distanceToSquared(jsref) < grabDist2) {
 				this.active = true;
 			}
 		});
@@ -45,18 +47,18 @@ AFRAME.registerComponent('joyctl', {
 			this.active = false;
 		});
 	},
-	
+
 	tick: function (time, delta) {
 		let crot = this.stick.object3D.rotation;
 		if (this.active) {
 			// force into valid range
 			let cpos = this.rcon.object3D.position
-			cpos.x = clamp(cpos.x, this.ref.x, 0.25);
-			cpos.z = clamp(cpos.z, this.ref.z, 0.25);
-			cpos.y = clamp(cpos.y, this.ref.y, 0.05);
+			cpos.x = clamp(cpos.x, jsref.x, 0.25);
+			cpos.z = clamp(cpos.z, jsref.z, 0.25);
+			cpos.y = clamp(cpos.y, jsref.y, 0.05);
 
 			// hand pos rel to stick center
-			this.tvec.subVectors(cpos, this.ref);
+			this.tvec.subVectors(cpos, jsref);
 			crot.z = -Math.asin(this.tvec.x)*2.0;	// / height
 			crot.x = Math.asin(this.tvec.z)*2.0;
 		} else {
@@ -122,7 +124,7 @@ AFRAME.registerComponent('pilot', {
 		this.wvel.applyQuaternion(wq);
 		
 		// move along velocity
-		this.wpos.addScaledVector(this.wvel, delta);
+		///FIXME this.wpos.addScaledVector(this.wvel, delta);
 	}
 });
 
@@ -140,10 +142,16 @@ AFRAME.registerComponent('thumb-events',{
 	getStick: function (evt) {
 		pos = this.pos.object3D.position;
 		if (evt.srcElement.id == "LHand") {	// adjust VR offset
-			if (evt.detail.y > 0.95) { pos.y -= this.dpos; }
-			else if (evt.detail.y < -0.95) { pos.y += this.dpos; }
-			if (evt.detail.x < -0.95) { pos.z += this.dpos; }
-			else if (evt.detail.x > 0.95) { pos.z -= this.dpos; }
+			if (evt.detail.y > 0.5) { 
+				pos.y -= this.dpos; jsref.y += this.dpos; 
+			} else if (evt.detail.y < -0.5) { 
+				pos.y += this.dpos; jsref.y -= this.dpos;
+			}
+			if (evt.detail.x < -0.5) { 
+				pos.z += this.dpos; jsref.z -= this.dpos; 
+			} else if (evt.detail.x > 0.5) { 
+				pos.z -= this.dpos; jsref.z += this.dpos;
+			}
 		}
 	}
 });
