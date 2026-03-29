@@ -90,7 +90,7 @@ AFRAME.registerComponent('pilot', {
 	
 	init: function () {
 		p = this;
-		this.wvel = new THREE.Vector3(0, 0, -this.data.speed);	// linear velocity, world frame
+		this.vel = new THREE.Vector3(0, 0, -this.data.speed);	// linear velocity, ship frame
 		this.wpos = this.el.object3D.position;		// world position
 		this.wrot = this.el.object3D.quaternion;	// world orientation
 		this.axis = new THREE.Vector3();
@@ -118,14 +118,13 @@ AFRAME.registerComponent('pilot', {
 		// rotate ship
 		this.q1.setFromAxisAngle(this.axis, angle);
 		this.wrot.multiply(this.q1);
-		// rotate velocity (maybe reduced angle for momentum?)
-		if (abutton) {
-			this.q1.setFromAxisAngle(this.axis, angle*0.5);
-		}
-		this.wvel.applyQuaternion(this.q1);
-		//console.log(this.wvel);
+		
+		// velocity in world frame
+		// maybe blend with prev vel for inertia?
+		this.axis.copy(this.vel);
+		this.axis.applyQuaternion(this.wrot);
 		// move along velocity
-		this.wpos.addScaledVector(this.wvel, delta);
+		this.wpos.addScaledVector(this.axis, delta);
 	}
 });
 
