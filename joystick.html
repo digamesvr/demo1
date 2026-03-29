@@ -85,13 +85,12 @@ AFRAME.registerComponent('joyctl', {
 AFRAME.registerComponent('pilot', {
 	schema: {
 		rotrate: { default: 0.002 },	// rotation rate deg/msec per joy deg
-		speed: { default: 0.002 },		// linear speed, m/msec
+		speed: { default: 0.005 },		// linear speed, m/msec
 	},
 	
 	init: function () {
 		p = this;
 		this.vel = new THREE.Vector3(0, 0, -this.data.speed);	// linear velocity, ship frame
-		this.wpos = this.el.object3D.position;		// world position
 		this.wrot = this.el.object3D.quaternion;	// world orientation
 		this.axis = new THREE.Vector3();
 		this.q1 = new THREE.Quaternion();
@@ -100,6 +99,8 @@ AFRAME.registerComponent('pilot', {
 	
 	update: function () {
 		this.stick = document.querySelector("#joystick");
+		let meP = document.querySelector("#meP");
+		this.wpos = meP.object3D.position;		// world position
 	},
 	
 	tick: function (time, delta) {
@@ -162,6 +163,48 @@ AFRAME.registerComponent('thumb-events',{
 	}
 });
 
+// create ship track
+AFRAME.registerComponent('set-track',{
+	init: function () {
+		this.active = false;
+		this.el.addEventListener('abuttondown', (event) => {
+			if (this.active) {
+				this.active = false;
+			} else {
+				this.start();
+			}
+		});
+	},
+	update: function () {
+		this.pos = document.querySelector("#meP");
+		this.rot = document.querySelector("#meR");
+		this.track = document.querySelector("#track");
+		this.dt = 2000.0;	// msec between points
+	},
+	start: function() {
+		this.active = true;
+		this.ttime = this.el.sceneEl.time;
+		this.track.replaceChildren();	// remove old path
+	},
+	tick: function (time, delta) {
+		if (this.active && time >= this.ttime) {
+			this.ttime += this.dt;
+			// add cube at current ship pos
+			// FIXME save ship orient
+			const cube = document.createElement('a-box');
+			const pos = this.pos.object3D.position;
+			cube.setAttribute('position', `${pos.x} ${pos.y} ${pos.z}`);
+			cube.setAttribute('depth', 0.5);
+			cube.setAttribute('height', 0.5);
+			cube.setAttribute('width', 0.5);
+			cube.setAttribute('color', '#FFF');
+			
+			this.track.appendChild(cube);
+		}
+	}
+	// add function to dump track
+});
+
 </script>
 </head>
 <body>	
@@ -184,7 +227,10 @@ AFRAME.registerComponent('thumb-events',{
 	<!-- world lighting, can move sun for time-of-day sim -->
 	<a-entity light="type: ambient; color: #444"></a-entity>
 	<a-entity light="type: directional; color: #FFF; intensity: 0.6" position="-.5 1 1"></a-entity>	
-	  
+	
+	<!-- motion reference track -->
+	<a-entity id="track"></a-entity>
+	
 	<!-- ship position -->
 	<a-entity id="meP" position="0 5 100">
 
@@ -216,7 +262,7 @@ AFRAME.registerComponent('thumb-events',{
 				thumb-events></a-entity>
 			<a-entity id="RHand" hand-controls="hand: right;
 				color: #696145; handModelStyle: highPoly; autoHide=false"
-				thumb-events></a-entity>
+				thumb-events set-track></a-entity>
 			</a-entity>
 		</a-entity>
 	</a-entity>
