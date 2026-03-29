@@ -6,6 +6,9 @@
 <script>
 let jc = 0;  // temp debug
 let p = 0;
+let rc = 0;
+
+let abutton = false;
 
 // joystick handle ref position in vrpos frame
 let jsref = new THREE.Vector3(0, 1.0, -0.5);
@@ -42,6 +45,7 @@ AFRAME.registerComponent('joyctl', {
 				this.active = true;
 			}
 		});
+		rc = this.rcon;
 		this.rcon.addEventListener('gripup', (event) => {
 			console.log('Grip up');
 			this.active = false;
@@ -59,8 +63,8 @@ AFRAME.registerComponent('joyctl', {
 
 			// hand pos rel to stick center
 			this.tvec.subVectors(cpos, jsref);
-			crot.z = -Math.asin(this.tvec.x)*2.0;	// / height
-			crot.x = Math.asin(this.tvec.z)*2.0;
+			crot.z = -Math.asin(this.tvec.x)*2;	// / height
+			crot.x = Math.asin(this.tvec.z)*2;
 		} else {
 			// inactive, auto return to center
 			if (crot.x > 0.005) {
@@ -89,6 +93,9 @@ AFRAME.registerComponent('pilot', {
 		this.wvel = new THREE.Vector3(0, 0, -this.data.speed);	// linear velocity, world frame
 		this.wpos = this.el.object3D.position;		// world position
 		this.wrot = this.el.object3D.quaternion;	// world orientation
+		this.axis = new THREE.Vector3();
+		this.q1 = new THREE.Quaternion();
+		//this.q2 = new THREE.Quaternion();
 	},
 	
 	update: function () {
@@ -97,34 +104,28 @@ AFRAME.registerComponent('pilot', {
 	
 	tick: function (time, delta) {
 		//if (!this.el.sceneEl.is("vr-mode")) return;
-		
-		// FIXME no news in here
 
 		// rotate wrot and wvel from joystick
-		q = this.stick.object3D.quaternion;
+		let q = this.stick.object3D.quaternion;
 		let angle = 2 * Math.acos(q.w);
 		if (Math.abs(angle) < 0.0001) {
-			x = 0; y = 1; z = 0;
+			this.axis.set(0, 1, 0);
 		} else {
 			const s = Math.sqrt(1 - q.w * q.w);
-			x = q.x / s;
-			y = q.y / s;
-			z = q.z / 2;
+			this.axis.set(q.x/s, q.y/s, q.z/s);
 		}
-		axis = new THREE.Vector3(x, y, z);
 		angle *= delta * this.data.rotrate;
-		// rotate ship in ship frame
-		q = new THREE.Quaternion().setFromAxisAngle(axis, angle);
-		this.wrot.multiply(q);
-		// rotate velocity in world frame
-		// THIS is for object3d! this.wvel.rotateOnWorldAxis(axis, angle);
-		wq = new THREE.Quaternion();
-		this.el.object3D.getWorldQuaternion(wq);
-		wq.multiply(q);
-		this.wvel.applyQuaternion(wq);
-		
+		// rotate ship
+		this.q1.setFromAxisAngle(this.axis, angle);
+		this.wrot.multiply(this.q1);
+		// rotate velocity (maybe reduced angle for momentum?)
+		if (abutton) {
+			this.q1.setFromAxisAngle(this.axis, angle*0.5);
+		}
+		this.wvel.applyQuaternion(this.q1);
+		//console.log(this.wvel);
 		// move along velocity
-		///FIXME this.wpos.addScaledVector(this.wvel, delta);
+		this.wpos.addScaledVector(this.wvel, delta);
 	}
 });
 
@@ -133,6 +134,12 @@ AFRAME.registerComponent('thumb-events',{
 	init: function () {
 		this.el.addEventListener('thumbstickmoved', (event) => {
 			this.getStick(event);
+		});
+		this.el.addEventListener('abuttondown', (event) => {
+			abutton = true;
+		});
+		this.el.addEventListener('abuttonup', (event) => {
+			abutton = false;
 		});
 	},
 	update: function () {
