@@ -216,8 +216,10 @@ AFRAME.registerComponent('set-track',{
 	<img id="sky" crossorigin="anonymous" src=
 	   "https://digamesvr.github.io/demo1/images/multi_nebulae_3.jpg"
 	>
+	<a-asset-item id="boxer"
+        src="https://digamesvr.github.io/demo1/models/boxer.glb"
+	></a-asset-item>
 	</a-assets>
-	  
 
 	<a-entity id="env" environment="preset: volcano; skyType: none; fog: 0" scale="4 4 4">
 	</a-entity>
@@ -241,6 +243,8 @@ AFRAME.registerComponent('set-track',{
 		<!-- ship orientation -->
 		<a-entity id="meR" pilot>
 			<!-- ship frame - lighting, cockpit; ref = floor under pilot -->
+	
+			<a-entity id="ship" gltf-model="#boxer" scale="1 1 1"></a-entity>	
 			
 			<a-entity id="joystick" position="0 0 -0.5">
 				<a-cylinder height="0.5" radius="0.02" position="0 0.25 0"
