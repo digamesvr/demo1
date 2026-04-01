@@ -219,6 +219,9 @@ AFRAME.registerComponent('set-track',{
 	<a-asset-item id="boxer"
         src="https://digamesvr.github.io/demo1/models/boxer.glb"
 	></a-asset-item>
+	<a-asset-item id="asteroid"
+        src="https://digamesvr.github.io/demo1/models/asteroid.glb"
+	></a-asset-item>
 	</a-assets>
 
 	<a-entity id="env" environment="preset: volcano; skyType: none; fog: 0" scale="4 4 4">
@@ -233,6 +236,11 @@ AFRAME.registerComponent('set-track',{
 	<!-- motion reference track -->
 	<a-entity id="track"></a-entity>
 	
+	<a-entity id="ast1" gltf-model="#asteroid" scale="1 1 1" position="0 50 -200"
+		animation="property:rotation; to: 0 360 0; loop: true; dur: 30000;
+                         easing:linear"
+	></a-entity>	
+	
 	<!-- ship position -->
 	<a-entity id="meP" position="0 5 100">
 
@@ -244,8 +252,10 @@ AFRAME.registerComponent('set-track',{
 		<a-entity id="meR" pilot>
 			<!-- ship frame - lighting, cockpit; ref = floor under pilot -->
 	
-			<a-entity id="ship" gltf-model="#boxer" scale="1 1 1"></a-entity>	
-			
+			<a-entity id="ship" gltf-model="#boxer" scale="0.75 0.75 0.75"
+				rotation="0 -90 0" position="0.783 1.424 1.802"
+			></a-entity>	
+		
 			<a-entity id="joystick" position="0 0 -0.5">
 				<a-cylinder height="0.5" radius="0.02" position="0 0.25 0"
 					material="color: #899dcd; metalness: 0.7" 
