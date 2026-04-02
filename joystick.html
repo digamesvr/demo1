@@ -8,7 +8,8 @@ let jc = 0;  // temp debug
 let p = 0;
 let rc = 0;
 
-let abutton = false;
+let gmode = 0;	// 0=surface, 1=asteroid...
+const MAXMODE = 1;
 
 // joystick handle ref position in vrpos frame
 let jsref = new THREE.Vector3(0, 1.0, -0.5);
@@ -135,12 +136,6 @@ AFRAME.registerComponent('thumb-events',{
 		this.el.addEventListener('thumbstickmoved', (event) => {
 			this.getStick(event);
 		});
-		this.el.addEventListener('abuttondown', (event) => {
-			abutton = true;
-		});
-		this.el.addEventListener('abuttonup', (event) => {
-			abutton = false;
-		});
 	},
 	update: function () {
 		this.pos = document.querySelector("#vrpos");
@@ -163,7 +158,7 @@ AFRAME.registerComponent('thumb-events',{
 	}
 });
 
-// create ship track
+// create ship track, other button stuff
 AFRAME.registerComponent('set-track',{
 	init: function () {
 		this.active = false;
@@ -173,6 +168,18 @@ AFRAME.registerComponent('set-track',{
 			} else {
 				this.start();
 			}
+		});
+		this.el.addEventListener('bbuttondown', (event) => {
+			if (++gmode > MAXMODE) {
+				gmode = 0;
+			}
+			console.log("Mode", gmode);
+
+			// update what's visible
+			let x = document.querySelector("#surface");
+			x.setAttribute('visible', gmode==0);
+			x = document.querySelector("#asteroids");
+			x.setAttribute('visible', gmode==1);
 		});
 	},
 	update: function () {
@@ -219,12 +226,16 @@ AFRAME.registerComponent('set-track',{
 	<a-asset-item id="boxer"
         src="https://digamesvr.github.io/demo1/models/boxer.glb"
 	></a-asset-item>
-	<a-asset-item id="asteroid"
-        src="https://digamesvr.github.io/demo1/models/asteroid.glb"
+	<a-asset-item id="asteroid2"
+        src="https://digamesvr.github.io/demo1/models/asteroid2.glb"
+	></a-asset-item>
+	<a-asset-item id="asteroid3"
+        src="https://digamesvr.github.io/demo1/models/asteroid3.glb"
 	></a-asset-item>
 	</a-assets>
 
-	<a-entity id="env" environment="preset: volcano; skyType: none; fog: 0" scale="4 4 4">
+	<a-entity id="surface" environment="preset: volcano; skyType: none; fog: 0" 
+		scale="4 4 4">
 	</a-entity>
 
 	<!-- world frame -->
@@ -236,10 +247,16 @@ AFRAME.registerComponent('set-track',{
 	<!-- motion reference track -->
 	<a-entity id="track"></a-entity>
 	
-	<a-entity id="ast1" gltf-model="#asteroid" scale="1 1 1" position="0 50 -200"
+	<a-entity id="asteroids">
+		<a-entity id="ast1" gltf-model="#asteroid2" scale="10 10 10" position="0 50 -200"
 		animation="property:rotation; to: 0 360 0; loop: true; dur: 30000;
                          easing:linear"
-	></a-entity>	
+		></a-entity>	
+		<a-entity id="ast2" gltf-model="#asteroid3" scale="10 10 10" position="50 50 -300"
+		animation="property:rotation; to: 0 -360 0; loop: true; dur: 30000;
+                         easing:linear"
+		></a-entity>	
+	</a-entity>	
 	
 	<!-- ship position -->
 	<a-entity id="meP" position="0 5 100">
