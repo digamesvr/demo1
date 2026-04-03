@@ -87,6 +87,7 @@ AFRAME.registerComponent('pilot', {
 	schema: {
 		rotrate: { default: 0.002 },	// rotation rate deg/msec per joy deg
 		speed: { default: 0.005 },		// linear speed, m/msec
+		//speed: { default: 0.0 },		// linear speed, m/msec
 	},
 	
 	init: function () {
@@ -234,9 +235,9 @@ AFRAME.registerComponent('set-track',{
 	></a-asset-item>
 	</a-assets>
 
-	<a-entity id="surface" environment="preset: volcano; skyType: none; fog: 0" 
-		scale="4 4 4">
-	</a-entity>
+	<a-entity id="surface" scale="4 4 4"
+		environment="preset: volcano; skyType: none; fog: 0" 
+	></a-entity>
 
 	<!-- world frame -->
 	
@@ -247,19 +248,21 @@ AFRAME.registerComponent('set-track',{
 	<!-- motion reference track -->
 	<a-entity id="track"></a-entity>
 	
-	<a-entity id="asteroids">
-		<a-entity id="ast1" gltf-model="#asteroid2" scale="10 10 10" position="0 50 -200"
-		animation="property:rotation; to: 0 360 0; loop: true; dur: 30000;
+	<a-entity id="asteroids" visible="false">
+		<a-entity position="0 20 -200" rotation="40 50 10">
+		<a-entity id="ast1" gltf-model="#asteroid2" scale="10 10 10" 
+		animation="property:rotation; from: 0 0 0; to: 0 360 0; loop: true; dur: 30000;
                          easing:linear"
-		></a-entity>	
-		<a-entity id="ast2" gltf-model="#asteroid3" scale="10 10 10" position="50 50 -300"
-		animation="property:rotation; to: 0 -360 0; loop: true; dur: 30000;
+		></a-entity></a-entity>
+		<a-entity position="50 20 -300" rotation="-5 40 -60">
+		<a-entity id="ast2" gltf-model="#asteroid3" scale="10 10 10"
+		animation="property:rotation; from: 0 0 0; to: 0 360 0; loop: true; dur: 25000;
                          easing:linear"
-		></a-entity>	
+		></a-entity></a-entity>
 	</a-entity>	
 	
 	<!-- ship position -->
-	<a-entity id="meP" position="0 5 100">
+	<a-entity id="meP" position="0 5 -100">
 
 		<!-- space background moves with ship -->
 		<a-sky src="#sky" material="depthWrite: false; 
