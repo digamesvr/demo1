@@ -3,6 +3,7 @@
 <head>
 <script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script>
 <script src="https://unpkg.com/aframe-environment-component@1.5.x/dist/aframe-environment-component.min.js"></script>
+<script src="https://unpkg.com/aframe-dust-component@^1.1.0/aframe-dust-component.js"></script>
 <script>
 let jc = 0;  // temp debug
 let p = 0;
@@ -86,7 +87,7 @@ AFRAME.registerComponent('joyctl', {
 AFRAME.registerComponent('pilot', {
 	schema: {
 		rotrate: { default: 0.002 },	// rotation rate deg/msec per joy deg
-		speed: { default: 0.005 },		// linear speed, m/msec
+		speed: { default: 0.02 },		// linear speed, m/msec (100mph=.045m/ms)
 		//speed: { default: 0.0 },		// linear speed, m/msec
 	},
 	
@@ -97,6 +98,10 @@ AFRAME.registerComponent('pilot', {
 		this.axis = new THREE.Vector3();
 		this.q1 = new THREE.Quaternion();
 		//this.q2 = new THREE.Quaternion();
+		
+		// connect dust to camera
+		let scene = this.el.sceneEl;
+		scene.querySelector('a-dust').components.dust.setCamera(scene.querySelector('[camera]'));
 	},
 	
 	update: function () {
@@ -233,6 +238,10 @@ AFRAME.registerComponent('set-track',{
 	<a-asset-item id="asteroid3"
         src="https://digamesvr.github.io/demo1/models/asteroid3.glb"
 	></a-asset-item>
+	
+	<audio id="music1" preload="auto" crossorigin="anonymous" src=
+         src="https://digamesvr.github.io/demo1/sounds/Friends.mp3"
+	></audio>
 	</a-assets>
 
 	<a-entity id="surface" scale="4 4 4"
@@ -260,9 +269,17 @@ AFRAME.registerComponent('set-track',{
                          easing:linear"
 		></a-entity></a-entity>
 	</a-entity>	
+
+	<!-- occasional meteorite? random time, speed, color, posiitions -->
+	<a-box color="yellow" width="15" depth="0.5" height="0.5"
+		emissive="#FCC" animation="property: position; 
+		from: -2200 60 -100; to: 2200 25 -150; dur: 2000; easing: linear; loop: true">
+	></a-box>
 	
+	<a-dust num-points="200" color="#303030" point-size="1.2"></a-dust>	
+
 	<!-- ship position -->
-	<a-entity id="meP" position="0 5 -100">
+	<a-entity id="meP" position="0 20 -100">
 
 		<!-- space background moves with ship -->
 		<a-sky src="#sky" material="depthWrite: false; 
@@ -274,7 +291,11 @@ AFRAME.registerComponent('set-track',{
 	
 			<a-entity id="ship" gltf-model="#boxer" scale="0.75 0.75 0.75"
 				rotation="0 -90 0" position="0.783 1.424 1.802"
-			></a-entity>	
+			></a-entity>
+
+			<a=sound id="music" src="#music1" volume="0.75" 
+				autoplay="true" loop="true" positional="false"
+			></a-sound>
 		
 			<a-entity id="joystick" position="0 0 -0.5">
 				<a-cylinder height="0.5" radius="0.02" position="0 0.25 0"
