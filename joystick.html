@@ -160,6 +160,12 @@ AFRAME.registerComponent('thumb-events',{
 			} else if (evt.detail.x > 0.5) { 
 				pos.z -= this.dpos; jsref.z += this.dpos;
 			}
+		} else {	// right hand = menu update
+			if (evt.detail.y > 0.95) {
+				guiSet(-1);
+			} else if (evt.detail.y < -0.95) {
+				guiSet(1);
+			}
 		}
 	}
 });
@@ -176,16 +182,7 @@ AFRAME.registerComponent('set-track',{
 			}
 		});
 		this.el.addEventListener('bbuttondown', (event) => {
-			if (++gmode > MAXMODE) {
-				gmode = 0;
-			}
-			console.log("Mode", gmode);
-
-			// update what's visible
-			let x = document.querySelector("#surface");
-			x.setAttribute('visible', gmode==0);
-			x = document.querySelector("#asteroids");
-			x.setAttribute('visible', gmode==1);
+			guiMode();
 		});
 	},
 	update: function () {
@@ -217,6 +214,57 @@ AFRAME.registerComponent('set-track',{
 	}
 	// add function to dump track
 });
+
+// cycle GUI mode on RH "B" button
+var Gfunc = 0;
+function guiMode() {
+	if (++Gfunc > 3)
+		Gfunc = 0;
+	guiSet(0);
+}
+
+// 0=show current setting, 1=increment, -1=decrement
+function guiSet(d) {
+	var name;
+	var val;
+	switch (Gfunc) {
+	case 0:		// scene mode, 0-1
+		name = "Scene mode";
+		if (d == 1) {
+			if (++gmode > MAXMODE) gmode = 0;
+		} else if (d == -1) {
+			if (--gmode < 0) gmode = MAXMODE;
+		}
+		switch(gmode) {
+		case 0: val = "Lava sfc"; break;
+		case 1: val = "Asteroids"; break;
+		}
+
+		// update what's visible
+		let x = document.querySelector("#surface");
+		x.setAttribute('visible', gmode==0);
+		x = document.querySelector("#asteroids");
+		x.setAttribute('visible', gmode==1);
+		break;
+	
+	case 1:		// ship speed
+		name = "Speed";
+		let vel = document.querySelector("#meR").components['pilot'].vel;
+		val = vel.z = Math.min(0, vel.z - 0.001 * d);
+		break;
+	
+	case 2:		// track point msec
+		name = "Track dist msec";
+		let st = document.querySelector("#RHand").components['set-track']
+		val = st.dt = Math.max(100, st.dt + 10*d);
+		break;
+		
+	}
+//	  pitch blend. meteor rate
+			
+	let label = document.querySelector("#gui");
+	label.setAttribute('text', 'value: ' + name + ' ' + String(val));
+}
 
 </script>
 </head>
@@ -270,7 +318,7 @@ AFRAME.registerComponent('set-track',{
 		></a-entity></a-entity>
 	</a-entity>	
 
-	<!-- occasional meteorite? random time, speed, color, posiitions -->
+	<!-- occasional meteorite? add random time, speed, color, positions -->
 	<a-box color="yellow" width="15" depth="0.5" height="0.5"
 		emissive="#FCC" animation="property: position; 
 		from: -2200 60 -100; to: 2200 25 -150; dur: 2000; easing: linear; loop: true">
@@ -293,10 +341,15 @@ AFRAME.registerComponent('set-track',{
 				rotation="0 -90 0" position="0.783 1.424 1.802"
 			></a-entity>
 
+<!--
 			<a=sound id="music" src="#music1" volume="0.75" 
 				autoplay="true" loop="true" positional="false"
 			></a-sound>
+-->
 		
+			<a-text id="gui" text="value: GUI HERE" 
+				position=".05 0.6 -0.8" scale="1 2 1" width="2"></a-text>
+				
 			<a-entity id="joystick" position="0 0 -0.5">
 				<a-cylinder height="0.5" radius="0.02" position="0 0.25 0"
 					material="color: #899dcd; metalness: 0.7" 
@@ -323,11 +376,7 @@ AFRAME.registerComponent('set-track',{
 	</a-entity>
 	
 </a-scene>
-
 <!--
-temp ship motion
-<!--animation="property: position; to: 0 20 -200; dur: 10000; loop: true" -->
-
 
 -->
 </body></html>
