@@ -9,8 +9,8 @@ let jc = 0;  // temp debug
 let p = 0;
 let rc = 0;
 
-let gmode = 0;	// 0=surface, 1=asteroid...
-const MAXMODE = 1;
+let gmode = 0;	// 0=surface, 1=asteroid, 2=saturn...
+const MAXMODE = 2;
 
 // joystick handle ref position in vrpos frame
 let jsref = new THREE.Vector3(0, 1.0, -0.5);
@@ -238,6 +238,7 @@ function guiSet(d) {
 		switch(gmode) {
 		case 0: val = "Lava sfc"; break;
 		case 1: val = "Asteroids"; break;
+		case 2: val = "Saturn"; break;
 		}
 
 		// update what's visible
@@ -245,6 +246,8 @@ function guiSet(d) {
 		x.setAttribute('visible', gmode==0);
 		x = document.querySelector("#asteroids");
 		x.setAttribute('visible', gmode==1);
+		x = document.querySelector("#saturn");
+		x.setAttribute('visible', gmode==2);
 		break;
 	
 	case 1:		// ship speed
@@ -275,8 +278,11 @@ function guiSet(d) {
 	<a-assets>
 	<!-- https://www.spacespheremaps.com/ -->
 	<img id="sky" crossorigin="anonymous" src=
-	   "https://digamesvr.github.io/demo1/images/multi_nebulae_3.jpg"
-	>
+	   "https://digamesvr.github.io/demo1/images/multi_nebulae_3.jpg">
+	<img id="saturn" crossorigin="anonymous" src=
+	   "https://digamesvr.github.io/demo1/images/saturn8k.jpg">
+	<img id="rings" crossorigin="anonymous" src=
+	   "https://digamesvr.github.io/demo1/images/rings.jpg">
 	<a-asset-item id="boxer"
         src="https://digamesvr.github.io/demo1/models/boxer.glb"
 	></a-asset-item>
@@ -318,13 +324,26 @@ function guiSet(d) {
 		></a-entity></a-entity>
 	</a-entity>	
 
+	<a-entity id="saturn" visible="false" position="0 0 -200" rotation="10 20 12">
+		<a-sphere radius="58" segments-height="32" src="#saturn"
+		animation="property: rotation; to: 0 360 0; dur: 50000; 
+			loop: true; easing: linear"
+		></a-sphere>
+		
+		<a-ring radius-inner="75" radius-outer="100" rotation="80 0 0"
+			src="#rings" material="side: double"></a-ring>
+		<a-ring radius-inner="102" radius-outer="145" rotation="80 0 0"
+			src="#rings" material="side: double"></a-ring>
+	</a-entity>	
+
+	
 	<!-- occasional meteorite? add random time, speed, color, positions -->
 	<a-box color="yellow" width="15" depth="0.5" height="0.5"
 		emissive="#FCC" animation="property: position; 
 		from: -2200 60 -100; to: 2200 25 -150; dur: 2000; easing: linear; loop: true">
 	></a-box>
 	
-	<a-dust num-points="200" color="#303030" point-size="1.2"></a-dust>	
+	<a-dust num-points="200" color="#303030" point-size=".8"></a-dust>	
 
 	<!-- ship position -->
 	<a-entity id="meP" position="0 20 -100">
@@ -341,11 +360,9 @@ function guiSet(d) {
 				rotation="0 -90 0" position="0.783 1.424 1.802"
 			></a-entity>
 
-<!--
 			<a=sound id="music" src="#music1" volume="0.75" 
 				autoplay="true" loop="true" positional="false"
 			></a-sound>
--->
 		
 			<a-text id="gui" text="value: GUI HERE" 
 				position=".05 0.6 -0.8" scale="1 2 1" width="2"></a-text>
