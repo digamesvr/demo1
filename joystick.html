@@ -224,9 +224,7 @@ function guiMode() {
 	
 	// needs interaction for sound
 	let m = document.querySelector("#music");
-	if (!m.isPlaying) {
-		m.play();
-	}
+	m.components.sound.playSound();
 }
 
 // 0=show current setting, 1=increment, -1=decrement
