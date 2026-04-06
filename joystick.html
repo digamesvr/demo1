@@ -218,9 +218,15 @@ AFRAME.registerComponent('set-track',{
 // cycle GUI mode on RH "B" button
 var Gfunc = 0;
 function guiMode() {
-	if (++Gfunc > 3)
+	if (++Gfunc > 2)
 		Gfunc = 0;
 	guiSet(0);
+	
+	// needs interaction for sound
+	let m = document.querySelector("#music");
+	if (!m.isPlaying) {
+		m.play();
+	}
 }
 
 // 0=show current setting, 1=increment, -1=decrement
@@ -246,7 +252,7 @@ function guiSet(d) {
 		x.setAttribute('visible', gmode==0);
 		x = document.querySelector("#asteroids");
 		x.setAttribute('visible', gmode==1);
-		x = document.querySelector("#saturn");
+		x = document.querySelector("#satrings");
 		x.setAttribute('visible', gmode==2);
 		break;
 	
@@ -324,7 +330,7 @@ function guiSet(d) {
 		></a-entity></a-entity>
 	</a-entity>	
 
-	<a-entity id="saturn" visible="false" position="0 0 -200" rotation="10 20 12">
+	<a-entity id="satrings" visible="false" position="0 0 -800" rotation="10 20 12">
 		<a-sphere radius="58" segments-height="32" src="#saturn"
 		animation="property: rotation; to: 0 360 0; dur: 50000; 
 			loop: true; easing: linear"
@@ -360,8 +366,8 @@ function guiSet(d) {
 				rotation="0 -90 0" position="0.783 1.424 1.802"
 			></a-entity>
 
-			<a=sound id="music" src="#music1" volume="0.75" 
-				autoplay="true" loop="true" positional="false"
+			<a-sound id="music" src="#music1" volume="0.75" 
+				loop="true" positional="false"
 			></a-sound>
 		
 			<a-text id="gui" text="value: GUI HERE" 
