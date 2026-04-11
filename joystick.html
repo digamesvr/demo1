@@ -86,7 +86,7 @@ AFRAME.registerComponent('joyctl', {
 // update ship motion
 AFRAME.registerComponent('pilot', {
 	schema: {
-		rotrate: { default: 0.002 },	// rotation rate deg/msec per joy deg
+		rotrate: { default: 0.01 },	// rotation rate deg/msec per joy deg
 		speed: { default: 0.02 },		// linear speed, m/msec (100mph=.045m/ms)
 	},
 	
@@ -319,8 +319,8 @@ function guiSet(d) {
 	<!-- world frame -->
 	
 	<!-- world lighting, can move sun for time-of-day sim -->
-	<a-entity light="type: ambient; color: #444"></a-entity>
-	<a-entity light="type: directional; color: #FFF; intensity: 0.6" position="-.5 1 1"></a-entity>	
+	<a-entity light="type: ambient; color: #222; intensity: 0.5"></a-entity>
+	<a-entity light="type: directional; color: #FFF; intensity: .5" position="-.5 1 1"></a-entity>	
 	
 	<!-- motion reference track -->
 	<a-entity id="track"></a-entity>
@@ -328,7 +328,7 @@ function guiSet(d) {
 	<!-- various scenes -->
 	<a-entity id="asteroids" visible="false"></a-entity>	
 
-	<a-entity id="satrings" visible="false" position="0 0 -800" rotation="10 20 12">
+	<a-entity id="satrings" visible="false" position="0 0 -600" rotation="10 20 12">
 		<a-sphere radius="58" segments-height="32" src="#saturn"
 		animation="property: rotation; to: 0 360 0; dur: 50000; 
 			loop: true; easing: linear"
@@ -363,6 +363,10 @@ function guiSet(d) {
 			<a-entity id="ship" gltf-model="#boxer" scale="0.75 0.75 0.75"
 				rotation="0 -90 0" position="0.783 1.424 1.802"
 			></a-entity>
+			
+			<a-entity id="headlight" position="0 0 -2"
+				light="type: spot; intensity: 100; angle: 60; penumbra: 0.2;"
+			></a-entity>	
 
 			<a-sound id="music" src="#music1" volume="0.75" 
 				loop="true" positional="false"
