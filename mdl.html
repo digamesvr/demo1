@@ -4,31 +4,111 @@
   <head>
     <meta charset="utf-8" />
     <script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script>
+	
   </head>
   <body>
    <a-scene renderer="antialias: true">
      
       <a-assets>
-        <a-asset-item id="tabmdl"
-        src="https://digamesvr.github.io/demo1/models/tablet.glb"
-        ></a-asset-item>
+	   <a-asset-item id="amodel"
+-        src="models/asteroid2.glb"
+-        ></a-asset-item>
+
+		<img id="disp2" crossorigin="anonymous" src=
+           "images/ast_disp.png"
+        >
+		<img id="norm" crossorigin="anonymous" src=
+           "images/ast_normal.png"
+        >
        <img id="sky" crossorigin="anonymous" src=
            "https://digamesvr.github.io/demo1/images/nebula.jpg"
         >
       </a-assets>
 
-     <!-- stars -->
-     <a-plane src="#sky" height="1000" width="2000" position="-500 0 0" 
-              rotation="0 90 0"></a-plane>
+     <!-- stars 
+     <a-plane src="#sky" height="200" width="500" position="0 0 -100" 
+              rotation="0 0 0"></a-plane>
 
-     <a-entity id="tablet" 
-          gltf-model="#tabmdl" scale=".5 .5 .5" 
-          animation="property: scale; from: 0 0 0; to: .5 .5 .5;
-                     dir: normal; easing: linear; dur: 250; startEvents: reset"
-          >
-     </a-entity>
+	<a-entity id="model" position="12 0 -5"
+      gltf-model="#amodel" scale="1 1 1"
+  		animation="dur: 20000; easing: linear; from: 0 0 0; loop: true; property: rotation; to: 0 360 360" 
+	></a-entity>
+-->
 
+	<a-sphere id="ast1" scale="2 3 2" position="0 2 -10" 
+		material="color: #AAA;  metalness: 0.8; roughness: 0.8;
+		normalMap: #norm; normalScale: -.1 -2; 
+		normalTextureRepeat: 1.5 1.5; 
+		
+		displacementMap: #disp2; displacementScale: .7;
+		displacementTextureRepeat: 2 2;" 
+		
+		animation="dur: 20000; easing: linear; from: 0 0 0; loop: true; property: rotation; to: 0 360 360" 
+		geometry="segmentsHeight: 16; segmentsWidth: 16">
+	 </a-sphere>
+	 
+	 
+	 <a-entity id="afield"></a-entity>
+	 
+<!--
 
+	 	<a-sphere id="ast2" radius="2" scale="1 1.5 1" position="4 0 -5" 
+		material="color: #c7a1b5;  metalness: 0.92; roughness: 0.78;
+		normalMap: #norm; normalScale: -0.8 -0.8; 
+		normalTextureRepeat: 1 1; 
+		displacementMap: #disp2; displacementScale: .8;
+		displacementTextureRepeat: 2 2;" 
+		animation="dur: 20000; easing: linear; from: 0 0 0; loop: true; property: rotation; to: 0 360 360"
+		geometry="segmentsHeight: 16; segmentsWidth: 16">
+	 </a-sphere>
+
+	 	<a-sphere radius="2" scale="1 1.5 1" position="4 0 -20" 
+		material="color: #c7a1b5;  metalness: 0.92; roughness: 0.78;
+		normalMap: #norm; normalScale: -0.8 -0.8; 
+		normalTextureRepeat: 1 1; 
+		displacementMap: #disp2; displacementScale: .8;
+		displacementTextureRepeat: 2 2;" 
+		animation="dur: 20000; easing: linear; from: 0 0 0; loop: true; property: rotation; to: 0 360 360"
+		geometry="segmentsHeight: 16; segmentsWidth: 16">
+	 </a-sphere>
+	 <a-sphere radius="2" scale="1 1.5 1" position="4 0 -25" 
+		material="color: #c7a1b5;  metalness: 0.92; roughness: 0.78;
+		normalMap: #norm; normalScale: -0.8 -0.8; 
+		normalTextureRepeat: 1 1; 
+		displacementMap: #disp2; displacementScale: .8;
+		displacementTextureRepeat: 2 2;" 
+		animation="dur: 20000; easing: linear; from: 0 0 0; loop: true; property: rotation; to: 0 360 360"
+		geometry="segmentsHeight: 16; segmentsWidth: 16">
+	 </a-sphere>
+	 <a-sphere radius="2" scale="1 1.5 1" position="4 0 -30" 
+		material="color: #c7a1b5;  metalness: 0.92; roughness: 0.78;
+		normalMap: #norm; normalScale: -0.8 -0.8; 
+		normalTextureRepeat: 1 1; 
+		displacementMap: #disp2; displacementScale: .8;
+		displacementTextureRepeat: 2 2;" 
+		animation="dur: 20000; easing: linear; from: 0 0 0; loop: true; property: rotation; to: 0 360 360"
+		geometry="segmentsHeight: 16; segmentsWidth: 16">
+	 </a-sphere>
+	 <a-sphere radius="2" scale="1 1.5 1" position="4 0 -35" 
+		material="color: #c7a1b5;  metalness: 0.92; roughness: 0.78;
+		normalMap: #norm; normalScale: -0.8 -0.8; 
+		normalTextureRepeat: 1 1; 
+		displacementMap: #disp2; displacementScale: .8;
+		displacementTextureRepeat: 2 2;" 
+		animation="dur: 20000; easing: linear; from: 0 0 0; loop: true; property: rotation; to: 0 360 360"
+		geometry="segmentsHeight: 16; segmentsWidth: 16">
+	 </a-sphere>
+	 <a-sphere radius="2" scale="1 1.5 1" position="4 0 -40" 
+		material="color: #c7a1b5;  metalness: 0.92; roughness: 0.78;
+		normalMap: #norm; normalScale: -0.8 -0.8; 
+		normalTextureRepeat: 1 1; 
+		displacementMap: #disp2; displacementScale: .8;
+		displacementTextureRepeat: 2 2;" 
+		animation="dur: 20000; easing: linear; from: 0 0 0; loop: true; property: rotation; to: 0 360 360"
+		geometry="segmentsHeight: 16; segmentsWidth: 16">
+	 </a-sphere>
+
+-->
      <!-- lights -->
      <a-entity light="type: ambient; color: #BBB; intensity: 0.4"></a-entity>
      <a-entity light="intensity: 0.4; castShadow: true" position="-0.5 1 1"></a-entity>
@@ -36,5 +116,111 @@
      <a-entity light="type: point; intensity: 1.5" position="8 0 -25"></a-entity>
 
      </a-scene>
+	 
+<script>
+function rgbToHex(r, g, b) {
+  const toHex = (c) => Math.floor(c).toString(16).padStart(2, '0');
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+};
+
+function add_asteroid(ix, iy, iz) {
+	// parent with rotation axis
+	let p = document.createElement('a-entity');
+	// scale and jiggle position
+	p.object3D.position.x = ix * 40 + Math.random()*2;
+	p.object3D.position.y = iy * 40 + Math.random()*2;
+	p.object3D.position.z = iz * 40 + Math.random()*2;
+	// axis orient
+	p.setAttribute("rotation", `${180*Math.random()} ${180*Math.random()} ${180*Math.random()}`);
+	
+	// sphere
+	let s = document.createElement("a-sphere");
+	p.appendChild(s);
+	s.object3D.scale.x = 4 + 5*Math.random();
+	s.object3D.scale.y = 4 + 5*Math.random();
+	s.object3D.scale.z = 4 + 5*Math.random();
+	s.setAttribute("segments-height", 16);
+	s.setAttribute("segments-width", 16);
+
+	let red = 0x80 + 0x70*Math.random();
+	s.setAttribute("material", "color", rgbToHex(red, 
+			red - 0x10 + 0x20*Math.random(),
+			red - 0x10 + 0x20*Math.random()));
+	s.setAttribute("material", 
+		`metalness: ${0.1 + 0.8*Math.random()}; roughness: ${0.6 + 0.39*Math.random()};`);
+	let scale = -0.1 - 2*Math.random();
+	let rep = 1.5 + 4*Math.random();
+	s.setAttribute("material", `normalMap: #norm; normalScale: ${scale} ${scale}; normalTextureRepeat: ${rep} ${rep}`);
+	scale = 0.3 + 2.4*Math.random();
+	rep = Math.floor(3+4*Math.random());
+	//rep = 3+4*Math.random();
+	s.setAttribute("material", `displacementMap: #disp2; displacementScale: ${scale} ${scale}; displacementTextureRepeat: ${rep} ${rep}`);
+
+	if (Math.random() < 0.2) {		// add spin
+		let rx = ry = rz = 0;
+		if (Math.random() < 0.3) rx = Math.random() < 0.5 ? -360 : 360;
+		if (Math.random() < 0.3) ry = Math.random() < 0.5 ? -360 : 360;
+		if (Math.random() < 0.3) rz = Math.random() < 0.5 ? -360 : 360;
+		s.setAttribute("animation", `property: rotation; to: ${rx} ${ry} ${rz}; easing: linear; dur: ${40000+100000*Math.random()}`);
+	}
+
+	return p;
+}
+		animation="dur: 20000; easing: linear; from: 0 0 0; loop: true; property: rotation; to: 0 360 360"
+
+
+function asteroidField() {
+	el = document.querySelector("#afield");
+	var ix, iy, iz;
+	for (ix=-5; ix<=5; ix++) {
+		for (iy=-5; iy<=5; iy++) {
+			for (iz=-5; iz<=5; iz++) {
+				// maybe drop this position, more likely farther from center
+				if (Math.random() < (ix+iy+iz)/30) {
+					el.appendChild(add_asteroid(ix, iy, iz));
+				}
+			}
+		}
+	}
+}
+
+asteroidField();
+</script>
+
   </body>
+<!--
+        src="https://digamesvr.github.io/demo1/models/tablet.glb"
+		
+		<a-plane src="#sky" height="200" width="500" position="0 0 -100" material="normalMap: #disp"></a-plane>
+
+		
+		<a-sphere id="ast2" radius="2" scale="1 1.5 1" position="-1 0 -5" material="color: #a7a1b5; displacementMap: #disp; displacementScale: 0.61; displacementTextureRepeat: 2 2; metalness: 0.92; normalMap: #norm; normalScale: 0.8 0.8; normalTextureRepeat: 3 3; roughness: 0.78" animation="dur: 10000; easing: linear; from: 0 0 0; loop: true; property: rotation; to: 0 360 360" 
+		geometry="segmentsHeight: 16; segmentsWidth: 16">
+	 </a-sphere>
+	 
+	 
+     <a-sphere id="ast2" radius="2"   scale="1 1.5 1" position="-1 0 -5"
+		material="normalMap: #norm"
+          animation="property:rotation; from: 0 0 0; to: 0 360 360; 
+			loop: true; dur: 10000; easing:linear">
+	 </a-sphere>
+	 
+	 
+	 material="color: #a7a1b5; metalness: 0.92; normalMap: #norm2; normalScale: -0.8 -0.8; normalTextureRepeat: 1.5 1.5; roughness: 0.78; displacementMap: #disp; displacementScale: 1.49; displacementTextureRepeat: 1.5 1"
+	 
+	 	 	<a-sphere id="ast3" radius="2" scale="1 1.2 1" position="12 0 -5" 
+		material="color: #a7a1b5;  metalness: 0.92; roughness: 0.78;
+		normalMap: #norm; normalScale: -1 -2; 
+		normalTextureRepeat: 5 5; 
+		displacementMap: #disp2; displacementScale: 1.3;
+		displacementTextureRepeat: 1 1;" 
+		animation="dur: 20000; easing: linear; from: 0 0 0; loop: true; property: rotation; to: 0 360 360" 
+		geometry="segmentsHeight: 16; segmentsWidth: 16">
+	 </a-sphere>
+
+restart to use nvidia
+
+parm range
+
+-->
 </html>

@@ -88,7 +88,6 @@ AFRAME.registerComponent('pilot', {
 	schema: {
 		rotrate: { default: 0.002 },	// rotation rate deg/msec per joy deg
 		speed: { default: 0.02 },		// linear speed, m/msec (100mph=.045m/ms)
-		//speed: { default: 0.0 },		// linear speed, m/msec
 	},
 	
 	init: function () {
@@ -204,9 +203,12 @@ AFRAME.registerComponent('set-track',{
 			const cube = document.createElement('a-box');
 			const pos = this.pos.object3D.position;
 			cube.setAttribute('position', `${pos.x} ${pos.y} ${pos.z}`);
-			cube.setAttribute('depth', 0.5);
-			cube.setAttribute('height', 0.5);
-			cube.setAttribute('width', 0.5);
+			//const rot = this.rot.object3D.rotation;
+			//cube.setAttribute('rotation', `${rot.x}*r2d ${rot.y}*r2d ${rot.z}*r2d`);
+			cube.object3D.quaternion.copy(this.rot.object3D.quaternion);
+			cube.setAttribute('depth', 1.0);
+			cube.setAttribute('height', 1.0);
+			cube.setAttribute('width', 5.0);
 			cube.setAttribute('color', '#FFF');
 			
 			this.track.appendChild(cube);
@@ -218,7 +220,7 @@ AFRAME.registerComponent('set-track',{
 // cycle GUI mode on RH "B" button
 var Gfunc = 0;
 function guiMode() {
-	if (++Gfunc > 2)
+	if (++Gfunc > 3)
 		Gfunc = 0;
 	guiSet(0);
 	
@@ -250,6 +252,9 @@ function guiSet(d) {
 		x.setAttribute('visible', gmode==0);
 		x = document.querySelector("#asteroids");
 		x.setAttribute('visible', gmode==1);
+		if (gmode==1 && x.getChildren().length < 2) {
+			asteroidField(x);
+		}
 		x = document.querySelector("#satrings");
 		x.setAttribute('visible', gmode==2);
 		break;
@@ -264,6 +269,13 @@ function guiSet(d) {
 		name = "Track dist msec";
 		let st = document.querySelector("#RHand").components['set-track']
 		val = st.dt = Math.max(100, st.dt + 10*d);
+		break;
+
+	case 3:	// rotation rate
+		name = "Roll Rate";
+		
+		let pd = document.querySelector("#meR").components['pilot'].data;
+		val = pd.rotrate = Math.max(0.001, pd.rotrate + 0.0005 * d);
 		break;
 		
 	}
@@ -290,13 +302,11 @@ function guiSet(d) {
 	<a-asset-item id="boxer"
         src="https://digamesvr.github.io/demo1/models/boxer.glb"
 	></a-asset-item>
-	<a-asset-item id="asteroid2"
-        src="https://digamesvr.github.io/demo1/models/asteroid2.glb"
-	></a-asset-item>
-	<a-asset-item id="asteroid3"
-        src="https://digamesvr.github.io/demo1/models/asteroid3.glb"
-	></a-asset-item>
-	
+	<img id="astdisp" crossorigin="anonymous" src=
+	   "https://digamesvr.github.io/demo1/images/ast_disp.png">
+	<img id="astnorm" crossorigin="anonymous" src=
+	   "https://digamesvr.github.io/demo1/images/ast_normal.png">
+		   
 	<audio id="music1" preload="auto" crossorigin="anonymous"
          src="https://digamesvr.github.io/demo1/sound/Friends.mp3"
 	></audio>
@@ -315,18 +325,8 @@ function guiSet(d) {
 	<!-- motion reference track -->
 	<a-entity id="track"></a-entity>
 	
-	<a-entity id="asteroids" visible="false">
-		<a-entity position="0 20 -200" rotation="40 50 10">
-		<a-entity id="ast1" gltf-model="#asteroid2" scale="10 10 10" 
-		animation="property:rotation; from: 0 0 0; to: 0 360 0; loop: true; dur: 30000;
-                         easing:linear"
-		></a-entity></a-entity>
-		<a-entity position="50 20 -300" rotation="-5 40 -60">
-		<a-entity id="ast2" gltf-model="#asteroid3" scale="10 10 10"
-		animation="property:rotation; from: 0 0 0; to: 0 360 0; loop: true; dur: 25000;
-                         easing:linear"
-		></a-entity></a-entity>
-	</a-entity>	
+	<!-- various scenes -->
+	<a-entity id="asteroids" visible="false"></a-entity>	
 
 	<a-entity id="satrings" visible="false" position="0 0 -800" rotation="10 20 12">
 		<a-sphere radius="58" segments-height="32" src="#saturn"
@@ -397,6 +397,73 @@ function guiSet(d) {
 	</a-entity>
 	
 </a-scene>
+
+<script>
+function rgbToHex(r, g, b) {
+  const toHex = (c) => Math.floor(c).toString(16).padStart(2, '0');
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+};
+
+function add_asteroid(ix, iy, iz) {
+	// parent with rotation axis
+	let p = document.createElement('a-entity');
+	// scale and jiggle position
+	p.object3D.position.x = ix * 40 + Math.random()*2;
+	p.object3D.position.y = iy * 40 + Math.random()*2;
+	p.object3D.position.z = iz * 40 + Math.random()*2;
+	// axis orient
+	p.setAttribute("rotation", `${180*Math.random()} ${180*Math.random()} ${180*Math.random()}`);
+	
+	// sphere
+	let s = document.createElement("a-sphere");
+	p.appendChild(s);
+	s.object3D.scale.x = 4 + 5*Math.random();
+	s.object3D.scale.y = 4 + 5*Math.random();
+	s.object3D.scale.z = 4 + 5*Math.random();
+	s.setAttribute("segments-height", 16);
+	s.setAttribute("segments-width", 16);
+
+	let red = 0x80 + 0x70*Math.random();
+	s.setAttribute("material", "color", rgbToHex(red, 
+			red - 0x10 + 0x20*Math.random(),
+			red - 0x10 + 0x20*Math.random()));
+	s.setAttribute("material", 
+		`metalness: ${0.1 + 0.8*Math.random()}; roughness: ${0.6 + 0.39*Math.random()};`);
+	let scale = -0.1 - 2*Math.random();
+	let rep = 1.5 + 4*Math.random();
+	s.setAttribute("material", `normalMap: #astnorm; normalScale: ${scale} ${scale}; normalTextureRepeat: ${rep} ${rep}`);
+	scale = 0.3 + 2.4*Math.random();
+	rep = Math.floor(3+4*Math.random());
+	//rep = 3+4*Math.random();
+	s.setAttribute("material", `displacementMap: #astdisp; displacementScale: ${scale} ${scale}; displacementTextureRepeat: ${rep} ${rep}`);
+
+	if (Math.random() < 0.2) {		// add spin
+		let rx = ry = rz = 0;
+		if (Math.random() < 0.3) rx = Math.random() < 0.5 ? -360 : 360;
+		if (Math.random() < 0.3) ry = Math.random() < 0.5 ? -360 : 360;
+		if (Math.random() < 0.3) rz = Math.random() < 0.5 ? -360 : 360;
+		s.setAttribute("animation", `property: rotation; to: ${rx} ${ry} ${rz}; easing: linear; dur: ${40000+100000*Math.random()}`);
+	}
+
+	return p;
+}
+
+// create asteroid field
+function asteroidField(el) {
+	var ix, iy, iz;
+	for (ix=-5; ix<=5; ix++) {
+		for (iy=-5; iy<=5; iy++) {
+			for (iz=-5; iz<=5; iz++) {
+				// maybe drop this position, more likely farther from center
+				if (Math.random() < (ix+iy+iz)/30) {
+					el.appendChild(add_asteroid(ix, iy, iz));
+				}
+			}
+		}
+	}
+}
+</script>
+
 <!--
 
 -->
