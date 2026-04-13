@@ -4,13 +4,14 @@
 <script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script>
 <script src="https://unpkg.com/aframe-environment-component@1.5.x/dist/aframe-environment-component.min.js"></script>
 <script src="https://unpkg.com/aframe-dust-component@^1.1.0/aframe-dust-component.js"></script>
+<script type="module" src="wormhole.js"> </script>
 <script>
 let jc = 0;  // temp debug
 let p = 0;
 let rc = 0;
 
-let gmode = 0;	// 0=surface, 1=asteroid, 2=saturn...
-const MAXMODE = 2;
+let gmode = 0;	// 0=surface, 1=asteroid, 2=saturn, 3=wormhole...
+const MAXMODE = 3;
 
 // joystick handle ref position in vrpos frame
 let jsref = new THREE.Vector3(0, 1.0, -0.5);
@@ -245,6 +246,7 @@ function guiSet(d) {
 		case 0: val = "Lava sfc"; break;
 		case 1: val = "Asteroids"; break;
 		case 2: val = "Saturn"; break;
+		case 3: val = "Wormhole"; break;
 		}
 
 		// update what's visible
@@ -257,6 +259,8 @@ function guiSet(d) {
 		}
 		x = document.querySelector("#satrings");
 		x.setAttribute('visible', gmode==2);
+		x = document.querySelector("#wormhole");
+		x.setAttribute('visible', gmode==3);
 		break;
 	
 	case 1:		// ship speed
@@ -339,7 +343,8 @@ function guiSet(d) {
 		<a-ring radius-inner="102" radius-outer="145" rotation="80 0 0"
 			src="#rings" material="side: double"></a-ring>
 	</a-entity>	
-
+	
+	<a-entity wormhole visible="false"></a-entity>
 	
 	<!-- occasional meteorite? add random time, speed, color, positions -->
 	<a-box color="yellow" width="15" depth="0.5" height="0.5"
@@ -375,7 +380,7 @@ function guiSet(d) {
 			<a-text id="gui" text="value: GUI HERE" 
 				position=".05 0.6 -0.8" scale="1 2 1" width="2"></a-text>
 				
-			<a-entity id="joystick" position="0 0 -0.5">
+			<a-entity id="joystick" position="0 .28 -0.5">
 				<a-cylinder height="0.5" radius="0.02" position="0 0.25 0"
 					material="color: #899dcd; metalness: 0.7" 
 					geometry="segmentsHeight: 1; segmentsRadial: 8">
@@ -388,7 +393,7 @@ function guiSet(d) {
 			</a-entity>
 	
 			<!-- VR headset/controllers with adjustable offset -->
-			<a-entity id="vrpos" position="0 -0.5 0">
+			<a-entity id="vrpos" position="0 -0.4 -0.1">
 			<a-camera> </a-camera>
 			<a-entity id="LHand" hand-controls="hand: left; 
 				color: #696145; handModelStyle: highPoly; autoHide=false"
