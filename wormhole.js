@@ -4,6 +4,10 @@ import { ImprovedNoise } from "https://cdn.skypack.dev/three@0.133.1/examples/js
 
 AFRAME.registerComponent('wormhole', {
 
+schema: {
+  visible: {default: true}
+},
+
 init: function() {
 // make these schema
 const radius = 3;
@@ -65,9 +69,14 @@ this.el.sceneEl.object3D.add(tubeA.points, tubeB.points);
 this.el.sceneEl.setAttribute("fog", "type: exponential; density: 0.07");
 },
 
+update: function() {
+  this.tubes[0].points.visible = this.data.visible;
+  this.tubes[1].points.visible = this.data.visible;
+},
+
 tick: function(time, delta) {
 	this.roll += (Math.random() - 0.5)*0.0002;
 	this.roll = Math.max(-0.001, Math.min(this.roll, 0.001))
   this.tubes.forEach((tb) => tb.update(delta, this.roll*delta));
-}
+},
 });
