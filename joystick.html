@@ -15,6 +15,7 @@
     }
   }
 </script>
+<script src="beat.js"></script>
 <script type="module">
 import 'aframe';
 import 'dust';
@@ -151,12 +152,52 @@ AFRAME.registerComponent('pilot', {
 	}
 });
 
-// calibrate user position
+// setup/start music beat flight track (X button)
+// for now straight line in current direction
+// no good for wormhole mode!
+function beatTrack() {
+	let m = document.querySelector("#music").components.sound;
+	m.stopSound();
+	
+	let track = document.querySelector("#track");
+	track.replaceChildren();	// remove old path
+	const offset = 10;	// fixme adjust
+	const pos = document.querySelector("#meP").object3D.position;
+	const posz = pos.z + offset;
+	let vel = document.querySelector("#meR").components['pilot'].vel.z;
+	
+	for (let i = 0; i < beatsamp.length; i++) {
+		// fixme save as msec not samples
+		let msec = beatsamp[i]*1000/22050
+			
+		const cube = document.createElement('a-box');
+		cube.setAttribute('position', `${pos.x} ${pos.y} ${pos.z + msec*vel}`);
+		cube.setAttribute('depth', 0.5);
+		cube.setAttribute('height', 0.3);
+		cube.setAttribute('width', 5.0);
+
+		// not a good selector...
+		if (beattype[i] < 30) {
+			cube.setAttribute('color', '#F00');
+		} else {
+			cube.setAttribute('color', '#00F');
+		}
+		track.appendChild(cube);
+	}
+
+	m.playSound();
+}
+
+// calibrate user position, etc.
 AFRAME.registerComponent('thumb-events',{
 	init: function () {
 		this.el.addEventListener('thumbstickmoved', (event) => {
 			this.getStick(event);
 		});
+		this.el.addEventListener('xbuttondown', (event) => {
+			beatTrack();
+		});
+
 	},
 	update: function () {
 		this.pos = document.querySelector("#vrpos");
@@ -240,14 +281,16 @@ function guiMode() {
 	guiSet(0);
 	
 	// needs interaction for sound
-	let m = document.querySelector("#music");
-	m.components.sound.playSound();
+	//let m = document.querySelector("#music");
+	//m.components.sound.playSound();
 }
 
 // 0=show current setting, 1=increment, -1=decrement
 function guiSet(d) {
 	var name;
 	var val;
+	let vel = document.querySelector("#meR").components['pilot'].vel;
+
 	switch (Gfunc) {
 	case 0:		// scene mode, 0-1
 		name = "Scene mode";
@@ -275,18 +318,20 @@ function guiSet(d) {
 		x.setAttribute('visible', gmode==2);
 		x = document.querySelector("#wormhole");
 		x.setAttribute('wormhole', 'visible', gmode==3);
-		//x.components.wormhole.visible(gmode==3);
+
         if (gmode==3) {
-          let vel = document.querySelector("#meR").components['pilot'].vel;
           vel.z = 0;
-          let meP = document.querySelector("#meP");
-          meP.object3D.position.set(0, 0, 0);
-        }	// FIXME optimize tick if not visible?
+        } else {
+			// FIXME optimize wormhole tick if not visible?
+			if (vel.z == 0)
+				vel.z = -0.02;
+		}
+		let meP = document.querySelector("#meP");
+		meP.object3D.position.set(0, 0, 0);
 		break;
 	
 	case 1:		// ship speed
 		name = "Speed";
-		let vel = document.querySelector("#meR").components['pilot'].vel;
 		val = vel.z = Math.min(0, vel.z - 0.001 * d);
 		break;
 	
