@@ -42,6 +42,7 @@ this.roll = 0;
 
 function getTube(index) {
   const startPosZ =  -tubeLength * index;
+  const startPosY =  20;	// FIXME
   const endPosZ = tubeLength;
   const resetPosZ =  -tubeLength;
   const geo = new THREE.BufferGeometry();
@@ -49,6 +50,7 @@ function getTube(index) {
   geo.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
   const points = new THREE.Points(geo, mat);
   points.rotation.x = Math.PI * 0.5;
+  points.position.y = startPosY;
   points.position.z = startPosZ;
   const speed = 0.02;
 

@@ -11,7 +11,8 @@
     "aframe-extras/controls": "https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.5.x/dist/aframe-extras.controls.min.js",
     "dust": "https://unpkg.com/aframe-dust-component@^1.1.0/aframe-dust-component.js",
     "environment":"https://unpkg.com/aframe-environment-component@1.5.x/dist/aframe-environment-component.min.js",
-	 "wormhole": "./wormhole.js"
+	"wormhole": "./wormhole.js",
+	"particle": "https://cdn.jsdelivr.net/gh/c-frame/aframe-particle-system-component@1.2.0/dist/aframe-particle-system-component.min.js"
     }
   }
 </script>
@@ -21,13 +22,13 @@ import 'aframe';
 import 'dust';
 import 'environment';
 import 'wormhole';
+import 'particle';
 	
 window.jc = 0;  // temp debug
 window.p = 0;
 window.rc = 0;
 
-let gmode = 0;	// 0=surface, 1=asteroid, 2=saturn, 3=wormhole...
-const MAXMODE = 3;
+let gmode = 0;	// 0=surface, 1=asteroid, 2=saturn, 3=wormhole, 4=hyperspace
 
 // joystick handle ref position in vrpos frame
 let jsref = new THREE.Vector3(0, 1.0, -0.5);
@@ -155,15 +156,16 @@ AFRAME.registerComponent('pilot', {
 // setup/start music beat flight track (X button)
 // for now straight line in current direction
 // no good for wormhole mode!
+let beat_offset = 10;	// m
+
 function beatTrack() {
 	let m = document.querySelector("#music").components.sound;
 	m.stopSound();
 	
 	let track = document.querySelector("#track");
 	track.replaceChildren();	// remove old path
-	const offset = 10;	// fixme adjust
 	const pos = document.querySelector("#meP").object3D.position;
-	const posz = pos.z + offset;
+	const posz = pos.z + beat_offset;
 	let vel = document.querySelector("#meR").components['pilot'].vel.z;
 	
 	for (let i = 0; i < beatsamp.length; i++) {
@@ -231,6 +233,8 @@ AFRAME.registerComponent('set-track',{
 	init: function () {
 		this.active = false;
 		this.el.addEventListener('abuttondown', (event) => {
+			let m = document.querySelector("#music").components.sound;
+			m.stopSound();
 			if (this.active) {
 				this.active = false;
 			} else {
@@ -276,13 +280,9 @@ AFRAME.registerComponent('set-track',{
 // cycle GUI mode on RH "B" button
 var Gfunc = 0;
 function guiMode() {
-	if (++Gfunc > 3)
+	if (++Gfunc > 4)
 		Gfunc = 0;
 	guiSet(0);
-	
-	// needs interaction for sound
-	//let m = document.querySelector("#music");
-	//m.components.sound.playSound();
 }
 
 // 0=show current setting, 1=increment, -1=decrement
@@ -295,15 +295,16 @@ function guiSet(d) {
 	case 0:		// scene mode, 0-1
 		name = "Scene mode";
 		if (d == 1) {
-			if (++gmode > MAXMODE) gmode = 0;
+			if (++gmode > 4) gmode = 0;
 		} else if (d == -1) {
-			if (--gmode < 0) gmode = MAXMODE;
+			if (--gmode < 0) gmode = 4;
 		}
 		switch(gmode) {
 		case 0: val = "Lava sfc"; break;
 		case 1: val = "Asteroids"; break;
 		case 2: val = "Saturn"; break;
 		case 3: val = "Wormhole"; break;
+		case 4: val = "Hyperspace"; break;
 		}
 
 		// update what's visible
@@ -318,16 +319,20 @@ function guiSet(d) {
 		x.setAttribute('visible', gmode==2);
 		x = document.querySelector("#wormhole");
 		x.setAttribute('wormhole', 'visible', gmode==3);
+		x = document.querySelector("#hyperspace");
+		x.setAttribute('visible', gmode==4);
+		x = document.querySelector("#bgnd");
+		x.setAttribute('color', gmode==4 ? '#000' : '#FFF');
 
         if (gmode==3) {
-          vel.z = 0;
+			//vel.z = 0;
         } else {
-			// FIXME optimize wormhole tick if not visible?
+			// FIXME optimize wormhole tick etc. if not visible?
 			if (vel.z == 0)
 				vel.z = -0.02;
 		}
 		let meP = document.querySelector("#meP");
-		meP.object3D.position.set(0, 0, 0);
+		meP.object3D.position.set(0, 20, 0);	// reset position
 		break;
 	
 	case 1:		// ship speed
@@ -348,6 +353,10 @@ function guiSet(d) {
 		val = pd.rotrate = Math.max(0.001, pd.rotrate + 0.0005 * d);
 		break;
 		
+	case 4: // beat line start offset
+		name = "Beat offset";
+		val = beat_offset = beat_offset + d;
+		break;		
 	}
 //	  pitch blend. meteor rate
 			
@@ -355,6 +364,8 @@ function guiSet(d) {
 	label.setAttribute('text', 'value: ' + name + ' ' + String(val));
 }
 
+// for console use
+window.guiSet = guiSet;
 </script>
 </head>
 <body>	
@@ -381,8 +392,6 @@ function guiSet(d) {
          src="https://digamesvr.github.io/demo1/sound/Friends.mp3"
 	></audio>
 	</a-assets>
-
-	<a-entity id=wormhole wormhole="visible: false"></a-entity>
 
 	<a-entity id="surface" scale="4 4 4"
 		environment="preset: volcano; skyType: none; fog: 0" 
@@ -421,11 +430,41 @@ function guiSet(d) {
 	<a-dust num-points="200" color="#303030" point-size=".8"></a-dust>	
 
 	<!-- ship position -->
-	<a-entity id="meP" position="0 20 -100">
+	<a-entity id="meP" position="0 20 0">
 
-		<!-- space background moves with ship -->
-		<a-sky src="#sky" material="depthWrite: false; 
+		<!-- space background moves with ship (have multiple ones) -->
+		<a-sky id="bgnd" src="#sky" material="depthWrite: false; 
 			blending: none; dithering: false; fog: false"></a-sky>
+			
+		<!-- as do warp effects -->
+		<a-entity id="hyperspace" visible="false">
+			<a-entity id="HS1" position="0 0 -20" scale="1 1 1" particle-system="color: #CCC,#66F;
+			velocityValue: 0 0 15; accelerationValue: 0 0 0;
+			velocitySpread: 10 10 1;
+			positionSpread: 0 0 5;
+			texture: /images/streak.png;
+			type: 3; size: .5 10; particleCount: 800; maxAge: .8; blending: 2;"
+			></a-entity>
+			<a-entity position="0 0.2 -20" scale="1 1 1" particle-system="color: #CCC,#804;
+			velocityValue: 0 0 15; accelerationValue: 0 0 0;
+			velocitySpread: 10 10 1;
+			positionSpread: 0 0 5;
+			texture: /images/streak.png;
+			type: 3; size: .5 10; particleCount: 800; maxAge: .8; blending: 2;"
+			></a-entity>
+			<a-light id="flash" type="point" intensity="10" color="#F88"
+				animation="property: position; from: -10 0 -100; to: -10 0 100; dur: 500; loop: true;
+				easing: linear;"
+			></a-light>
+			<a-light id="flash2" type="point" intensity="10" color="#88F"
+				animation="property: position; from: 10 0 -100; to: 10 0 100; dur: 600; loop: true;
+				easing: linear;"
+			></a-light>
+
+		</a-entity>
+
+		<a-entity id=wormhole wormhole="visible: false"></a-entity>
+
 
 		<!-- ship orientation -->
 		<a-entity id="meR" pilot>
@@ -439,8 +478,7 @@ function guiSet(d) {
 				light="type: spot; intensity: 100; angle: 60; penumbra: 0.2;"
 			></a-entity>	
 
-			<a-sound id="music" src="#music1" volume="0.75" 
-				loop="true" positional="false"
+			<a-sound id="music" src="#music1" volume="0.75" positional="false"
 			></a-sound>
 		
 			<a-text id="gui" text="value: GUI HERE" 
@@ -541,6 +579,9 @@ function asteroidField(el) {
 </script>
 
 <!--
+guiSet(-1)
+				startEvents: doFlash;"
 
+flashdir.emit('doFlash', null, false)
 -->
 </body></html>
