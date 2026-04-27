@@ -1,0 +1,45 @@
+<html>
+<head>hand scanner effect test
+<script type="importmap">
+  {
+  "imports": {
+    "aframe": "https://aframe.io/releases/1.7.1/aframe.module.min.js",
+    "three": "https://cdn.jsdelivr.net/npm/super-three@0.172.0/build/three.module.js"
+    }
+  }
+</script>
+<script type="module">
+import 'aframe';
+</script>
+</head>
+<body>
+<a-scene renderer="colorManagement: true; antialias: true" background>
+
+<a-entity id="RHand" hand-controls="hand: right;
+	color: #696145; handModelStyle: highPoly; autoHide=false"
+></a-entity>
+
+<a-entity id="RHandWF" visible="false" hand-controls="hand: right;
+	handModelStyle: lowPoly; autoHide=false"
+	
+></a-entity>
+
+<a-box position="-1 0.5 -3"  color="red"></a-box>
+
+</a-scene>
+
+<script>
+function handScan(enable) {
+	const rhwf = document.querySelector('#RHandWF');
+	const mesh = rhwf.getObject3D('mesh');
+	if (enable) {
+		mesh.scale.set(1.3, 1.2, 1.3);
+		mesh.children[0].material.wireframe = true;
+		mesh.children[0].material.emissive = {r: 1, g: 0, b: 0};
+	}
+	mesh.visible = enable;
+}
+</script>
+
+</body>
+</html>

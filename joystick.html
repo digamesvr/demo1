@@ -24,14 +24,9 @@ import 'environment';
 import 'wormhole';
 import 'particle';
 	
-window.jc = 0;  // temp debug
 window.p = 0;
 window.rc = 0;
-
 let gmode = 0;	// 0=surface, 1=asteroid, 2=saturn, 3=wormhole, 4=hyperspace
-
-// joystick handle ref position in vrpos frame
-let jsref = new THREE.Vector3(0, 1.0, -0.5);
 
 // force value into range ref-delta, ref+delta
 function clamp(val, ref, delta) {
@@ -43,106 +38,92 @@ function clamp(val, ref, delta) {
 	return val;
 }
 
-// update joystick from hand motion
-AFRAME.registerComponent('joyctl', {
-	init: function () {
-		window.jc = this;
-		this.active = false;
-		this.tvec = new THREE.Vector3();
-		this.controllerData = this.el.components["controller-listener"];
-		this.el.setAttribute('visible', false);
-	},
-	
-	update: function () {
-		this.lcon = document.querySelector("#LHand");
-		this.rcon = document.querySelector("#RHand");
-		this.stick = document.querySelector("#joystick");
-		
-		this.rcon.addEventListener('gripdown', (event) => {
-			console.log('Grip down', this.rcon.object3D.position);
-			const grabDist2 = 0.1; // 0.02;
-			if (this.rcon.object3D.position.distanceToSquared(jsref) < grabDist2) {
-				this.active = true;
-			}
-		});
-		window.rc = this.rcon;
-		this.rcon.addEventListener('gripup', (event) => {
-			console.log('Grip up');
-			this.active = false;
-		});
-	},
-
-	tick: function (time, delta) {
-		let crot = this.stick.object3D.rotation;
-		if (this.active) {
-			// force into valid range
-			let cpos = this.rcon.object3D.position
-			cpos.x = clamp(cpos.x, jsref.x, 0.25);
-			cpos.z = clamp(cpos.z, jsref.z, 0.25);
-			cpos.y = clamp(cpos.y, jsref.y, 0.05);
-
-			// hand pos rel to stick center
-			this.tvec.subVectors(cpos, jsref);
-			crot.z = -Math.asin(this.tvec.x)*2;	// / height
-			crot.x = Math.asin(this.tvec.z)*2;
-		} else {
-			// inactive, auto return to center
-			if (crot.x > 0.005) {
-				crot.x -= 0.005;
-			} else if (crot.x < -0.005) {
-				crot.x += 0.005;
-			}
-			if (crot.z > 0.005) {
-				crot.z -= 0.005;
-			} else if (crot.z < -0.005) {
-				crot.z += 0.005;
-			}
-		}
-	}
-});
+// set quat dq to rotation from qa to qb orientation
+function deltaQuat(dq, qa, qb) {
+	dq.copy(qa);
+	dq.conjugate();
+	dq.premultiply(qb);
+}
 
 // update ship motion
 AFRAME.registerComponent('pilot', {
 	schema: {
-		rotrate: { default: 0.01 },	// rotation rate deg/msec per joy deg
+		rotrate: { default: 0.001 },	// rotation rate deg/msec per joy deg
 		speed: { default: 0.02 },		// linear speed, m/msec (100mph=.045m/ms)
 	},
 	
 	init: function () {
 		window.p = this;
+		this.active = false;			// not grabbed/controlling
+
 		this.vel = new THREE.Vector3(0, 0, -this.data.speed);	// linear velocity, ship frame
 		this.wrot = this.el.object3D.quaternion;	// world orientation
-		this.axis = new THREE.Vector3();
-		this.q1 = new THREE.Quaternion();
-		//this.q2 = new THREE.Quaternion();
-		
+
+		this.handRefquat = new THREE.Quaternion();	// hand orient at grab
+		this.q1 = new THREE.Quaternion();			// rotation temp
+		this.axis = new THREE.Vector3();			// rotation axis temp
+
 		// connect dust to camera
 		let scene = this.el.sceneEl;
 		scene.querySelector('a-dust').components.dust.setCamera(scene.querySelector('[camera]'));
 	},
 	
+	// grab (FIXME in range) - start controlling
+	start: function () {
+		this.active = true;
+        this.handRefquat.copy(this.hcquat);
+	},
+
+	// ungrab, stop controlling
+	stop: function () {
+		this.active = false;
+		// FIXME rampdown rot (or keep spinning?)
+	},
+	
 	update: function () {
-		this.stick = document.querySelector("#joystick");
 		let meP = document.querySelector("#meP");
-		this.wpos = meP.object3D.position;		// world position
+		this.wpos = meP.object3D.position;	// world position
+		
+		this.lcon = document.querySelector("#LHand");
+		this.rcon = document.querySelector("#RHand");
+		this.hcquat = this.rcon.object3D.quaternion;
+		window.rc = this.rcon;
+
+		this.rcon.addEventListener('gripdown', (event) => {
+			this.start();
+		});
+
+		this.rcon.addEventListener('gripup', (event) => {
+			this.stop();
+		});
+
 	},
 	
 	tick: function (time, delta) {
 		//if (!this.el.sceneEl.is("vr-mode")) return;
-
-		// rotate wrot and wvel from joystick
-		let q = this.stick.object3D.quaternion;
-		let angle = 2 * Math.acos(q.w);
-		if (Math.abs(angle) < 0.0001) {
-			this.axis.set(0, 1, 0);
-		} else {
-			const s = Math.sqrt(1 - q.w * q.w);
-			this.axis.set(q.x/s, q.y/s, q.z/s);
+		if (this.active) {
+		
+			// hand rotation rel to hand pose at grab
+			let q = this.q1;
+			deltaQuat(q, this.handRefquat, this.hcquat);
+			
+			// to scale that, convert to axis/angle and back
+			let angle = 0.0;
+			if (q.w < 1.0) {		// handle normalization slop
+				angle = 2 * Math.acos(q.w);
+			}
+			if (Math.abs(angle) < 0.0001) {
+				this.axis.set(0, 1, 0);
+			} else {
+				const s = Math.sqrt(1 - q.w * q.w);
+				this.axis.set(q.x/s, q.y/s, q.z/s);
+			}
+			angle *= delta * this.data.rotrate;
+			
+			// rotate ship
+			q.setFromAxisAngle(this.axis, angle);
+			this.wrot.multiply(q);
 		}
-		angle *= delta * this.data.rotrate;
-		// rotate ship
-		this.q1.setFromAxisAngle(this.axis, angle);
-		this.wrot.multiply(this.q1);
 		
 		// velocity in world frame
 		// maybe blend with prev vel for inertia?
@@ -190,7 +171,7 @@ function beatTrack() {
 	m.playSound();
 }
 
-// calibrate user position, etc.
+// calibrate user position, GUI adjustments
 AFRAME.registerComponent('thumb-events',{
 	init: function () {
 		this.el.addEventListener('thumbstickmoved', (event) => {
@@ -263,8 +244,6 @@ AFRAME.registerComponent('set-track',{
 			const cube = document.createElement('a-box');
 			const pos = this.pos.object3D.position;
 			cube.setAttribute('position', `${pos.x} ${pos.y} ${pos.z}`);
-			//const rot = this.rot.object3D.rotation;
-			//cube.setAttribute('rotation', `${rot.x}*r2d ${rot.y}*r2d ${rot.z}*r2d`);
 			cube.object3D.quaternion.copy(this.rot.object3D.quaternion);
 			cube.setAttribute('depth', 1.0);
 			cube.setAttribute('height', 1.0);
@@ -309,7 +288,7 @@ function guiSet(d) {
 
 		// update what's visible
 		let x = document.querySelector("#surface");
-		x.setAttribute('visible', gmode==0);
+		x.setAttribute('environment', 'active', gmode==0);
 		x = document.querySelector("#asteroids");
 		x.setAttribute('visible', gmode==1);
 		if (gmode==1 && x.getChildren().length < 2) {
@@ -358,7 +337,7 @@ function guiSet(d) {
 		val = beat_offset = beat_offset + d;
 		break;		
 	}
-//	  pitch blend. meteor rate
+//	  velocity blend. meteor rate
 			
 	let label = document.querySelector("#gui");
 	label.setAttribute('text', 'value: ' + name + ' ' + String(val));
@@ -394,7 +373,7 @@ window.guiSet = guiSet;
 	</a-assets>
 
 	<a-entity id="surface" scale="4 4 4"
-		environment="preset: volcano; skyType: none; fog: 0" 
+		environment="preset: volcano; skyType: none; fog: 0; active: true" 
 	></a-entity>
 
 	<!-- world frame -->
@@ -442,14 +421,14 @@ window.guiSet = guiSet;
 			velocityValue: 0 0 15; accelerationValue: 0 0 0;
 			velocitySpread: 10 10 1;
 			positionSpread: 0 0 5;
-			texture: /images/streak.png;
+			texture: /demo1/images/streak.png;
 			type: 3; size: .5 10; particleCount: 800; maxAge: .8; blending: 2;"
 			></a-entity>
 			<a-entity position="0 0.2 -20" scale="1 1 1" particle-system="color: #CCC,#804;
 			velocityValue: 0 0 15; accelerationValue: 0 0 0;
 			velocitySpread: 10 10 1;
 			positionSpread: 0 0 5;
-			texture: /images/streak.png;
+			texture: /demo1/images/streak.png;
 			type: 3; size: .5 10; particleCount: 800; maxAge: .8; blending: 2;"
 			></a-entity>
 			<a-light id="flash" type="point" intensity="10" color="#F88"
@@ -484,18 +463,6 @@ window.guiSet = guiSet;
 			<a-text id="gui" text="value: GUI HERE" 
 				position=".05 0.6 -0.8" scale="1 2 1" width="2"></a-text>
 				
-			<a-entity id="joystick" position="0 .28 -0.5">
-				<a-cylinder height="0.5" radius="0.02" position="0 0.25 0"
-					material="color: #899dcd; metalness: 0.7" 
-					geometry="segmentsHeight: 1; segmentsRadial: 8">
-				</a-cylinder>
-				<a-cylinder height="0.14" radius="0.03" position="0 0.56 0"
-					material="color: #202020; metalness: 0.1" 
-					geometry="segmentsHeight: 1; segmentsRadial: 16">
-				</a-cylinder>
-				<a-entity id="jc" joyctl></a-entity>
-			</a-entity>
-	
 			<!-- VR headset/controllers with adjustable offset -->
 			<a-entity id="vrpos" position="0 -0.4 -0.1">
 			<a-camera> </a-camera>
@@ -583,5 +550,9 @@ guiSet(-1)
 				startEvents: doFlash;"
 
 flashdir.emit('doFlash', null, false)
+
+rampdown on release
+env not active at init?
+add scanner effect on grip
 -->
 </body></html>
