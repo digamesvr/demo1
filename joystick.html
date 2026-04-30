@@ -49,6 +49,7 @@ function deltaQuat(dq, qa, qb) {
 AFRAME.registerComponent('pilot', {
 	schema: {
 		rotrate: { default: 0.001 },	// rotation rate deg/msec per joy deg
+		rotramp: { default: 0.0001 },	// rotation auto rampdown rate 
 		speed: { default: 0.02 },		// linear speed, m/msec (100mph=.045m/ms)
 	},
 	
@@ -60,9 +61,10 @@ AFRAME.registerComponent('pilot', {
 		this.wrot = this.el.object3D.quaternion;	// world orientation
 
 		this.handRefquat = new THREE.Quaternion();	// hand orient at grab
-		this.q1 = new THREE.Quaternion();			// rotation temp
-		this.axis = new THREE.Vector3();			// rotation axis temp
-
+		this.axis = new THREE.Vector3();			// rotation axis
+		this.rrate = 0;								// rotation rate
+		this.q1 = new THREE.Quaternion();			// temp
+		this.v1 = new THREE.Vector3();				// temp
 		// connect dust to camera
 		let scene = this.el.sceneEl;
 		scene.querySelector('a-dust').components.dust.setCamera(scene.querySelector('[camera]'));
@@ -71,13 +73,14 @@ AFRAME.registerComponent('pilot', {
 	// grab (FIXME in range) - start controlling
 	start: function () {
 		this.active = true;
+		handScan(true);
         this.handRefquat.copy(this.hcquat);
 	},
 
 	// ungrab, stop controlling
 	stop: function () {
 		this.active = false;
-		// FIXME rampdown rot (or keep spinning?)
+		handScan(false);
 	},
 	
 	update: function () {
@@ -101,10 +104,10 @@ AFRAME.registerComponent('pilot', {
 	
 	tick: function (time, delta) {
 		//if (!this.el.sceneEl.is("vr-mode")) return;
+		let q = this.q1;
 		if (this.active) {
 		
 			// hand rotation rel to hand pose at grab
-			let q = this.q1;
 			deltaQuat(q, this.handRefquat, this.hcquat);
 			
 			// to scale that, convert to axis/angle and back
@@ -118,19 +121,32 @@ AFRAME.registerComponent('pilot', {
 				const s = Math.sqrt(1 - q.w * q.w);
 				this.axis.set(q.x/s, q.y/s, q.z/s);
 			}
-			angle *= delta * this.data.rotrate;
-			
-			// rotate ship
-			q.setFromAxisAngle(this.axis, angle);
-			this.wrot.multiply(q);
+			this.rrate = angle * delta * this.data.rotrate;
+		} else {
+			// ramp down on release
+			if (this.rrate > 0) {
+				this.rrate -= this.data.rotramp;
+				if (this.rrate < 0) {
+					this.rrate = 0;
+				}
+			} else {
+				this.rrate += this.data.rotramp;
+				if (this.rrate > 0) {
+					this.rrate = 0;
+				}
+			}			
 		}
+		
+		// rotate ship
+		q.setFromAxisAngle(this.axis, this.rrate);
+		this.wrot.multiply(q);
 		
 		// velocity in world frame
 		// maybe blend with prev vel for inertia?
-		this.axis.copy(this.vel);
-		this.axis.applyQuaternion(this.wrot);
+		this.v1.copy(this.vel);
+		this.v1.applyQuaternion(this.wrot);
 		// move along velocity
-		this.wpos.addScaledVector(this.axis, delta);
+		this.wpos.addScaledVector(this.v1, delta);
 	}
 });
 
@@ -180,7 +196,7 @@ AFRAME.registerComponent('thumb-events',{
 		this.el.addEventListener('xbuttondown', (event) => {
 			beatTrack();
 		});
-
+		this.waitup = false;		// wait for center to advance again
 	},
 	update: function () {
 		this.pos = document.querySelector("#vrpos");
@@ -200,10 +216,15 @@ AFRAME.registerComponent('thumb-events',{
 				pos.z -= this.dpos; jsref.z += this.dpos;
 			}
 		} else {	// right hand = menu update
-			if (evt.detail.y > 0.95) {
+			if (this.waitup) {
+				if (Math.abs(evt.detail.y < 0.25))
+					this.waitup = false;
+			} else 	if (evt.detail.y > 0.95) {
 				guiSet(-1);
+				this.waitup = true;
 			} else if (evt.detail.y < -0.95) {
 				guiSet(1);
+				this.waitup = true;
 			}
 		}
 	}
@@ -253,7 +274,7 @@ AFRAME.registerComponent('set-track',{
 			this.track.appendChild(cube);
 		}
 	}
-	// add function to dump track
+	// add function to dump track using websocket
 });
 
 // cycle GUI mode on RH "B" button
@@ -341,6 +362,18 @@ function guiSet(d) {
 			
 	let label = document.querySelector("#gui");
 	label.setAttribute('text', 'value: ' + name + ' ' + String(val));
+}
+
+// visual effect for joystick hand tracking
+function handScan(enable) {
+	const rhwf = document.querySelector('#RHandWF');
+	const mesh = rhwf.getObject3D('mesh');
+	if (enable) {
+		mesh.scale.set(1.3, 1.2, 1.3);
+		mesh.children[0].material.wireframe = true;
+		mesh.children[0].material.emissive = {r: 1, g: 0, b: 0};
+	}
+	mesh.visible = enable;
 }
 
 // for console use
@@ -472,6 +505,8 @@ window.guiSet = guiSet;
 			<a-entity id="RHand" hand-controls="hand: right;
 				color: #696145; handModelStyle: highPoly; autoHide=false"
 				thumb-events set-track></a-entity>
+			<a-entity id="RHandWF" visible="false" hand-controls="hand: right;
+				handModelStyle: lowPoly; autoHide=false"></a-entity>
 			</a-entity>
 		</a-entity>
 	</a-entity>
@@ -551,8 +586,6 @@ guiSet(-1)
 
 flashdir.emit('doFlash', null, false)
 
-rampdown on release
-env not active at init?
-add scanner effect on grip
+	code chcker
 -->
 </body></html>
