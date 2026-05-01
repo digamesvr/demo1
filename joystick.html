@@ -17,6 +17,16 @@
   }
 </script>
 <script src="beat.js"></script>
+
+<script> // websocket client test
+    var ws;
+    function ws_init() {
+      ws = new WebSocket("ws://192.168.1.115:7877/");
+      ws.onopen = function() { console.log("WS open"); };
+      ws.onerror = function(e) { console.log("WS error", e); };
+    }
+</script>
+
 <script type="module">
 import 'aframe';
 import 'dust';
@@ -230,7 +240,7 @@ AFRAME.registerComponent('thumb-events',{
 	}
 });
 
-// create ship track, other button stuff
+// create ship track (A button), menu stuff (B button)
 AFRAME.registerComponent('set-track',{
 	init: function () {
 		this.active = false;
@@ -238,7 +248,7 @@ AFRAME.registerComponent('set-track',{
 			let m = document.querySelector("#music").components.sound;
 			m.stopSound();
 			if (this.active) {
-				this.active = false;
+				this.stop();
 			} else {
 				this.start();
 			}
@@ -251,12 +261,20 @@ AFRAME.registerComponent('set-track',{
 		this.pos = document.querySelector("#meP");
 		this.rot = document.querySelector("#meR");
 		this.track = document.querySelector("#track");
+		this.label = document.querySelector("#gui");
 		this.dt = 2000.0;	// msec between points
 	},
 	start: function() {
 		this.active = true;
+		this.label.setAttribute('text', 'value: ' + 'Start track');
+
 		this.ttime = this.el.sceneEl.time;
 		this.track.replaceChildren();	// remove old path
+	},
+	stop: function() {
+		this.active = false;
+		this.label.setAttribute('text', 'value: ' + 'Send track');
+		this.sendTrack();
 	},
 	tick: function (time, delta) {
 		if (this.active && time >= this.ttime) {
@@ -273,8 +291,11 @@ AFRAME.registerComponent('set-track',{
 			
 			this.track.appendChild(cube);
 		}
+	},
+	sendTrack: function() {
+		// fixme send track data
+		ws.send("Track data...");
 	}
-	// add function to dump track using websocket
 });
 
 // cycle GUI mode on RH "B" button
@@ -380,7 +401,7 @@ function handScan(enable) {
 window.guiSet = guiSet;
 </script>
 </head>
-<body>	
+<body onload="ws_init();">	
 
 <a-scene renderer="colorManagement: true; antialias: true">
 
@@ -586,6 +607,5 @@ guiSet(-1)
 
 flashdir.emit('doFlash', null, false)
 
-	code chcker
 -->
 </body></html>
