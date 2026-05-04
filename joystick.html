@@ -1,5 +1,5 @@
 <!doctype html>
-<html><!-- joystick test -->
+<html><title>joystick test</title>
 <head>
 <!--mess to workaround meta emulator issue with three 173 -->
 <script type="importmap">
@@ -121,8 +121,8 @@ AFRAME.registerComponent('pilot', {
 			deltaQuat(q, this.handRefquat, this.hcquat);
 			
 			// to scale that, convert to axis/angle and back
-			let angle = 0.0;
-			if (q.w < 1.0) {		// handle normalization slop
+			let angle = 0;
+			if (q.w < 1) {		// handle normalization slop
 				angle = 2 * Math.acos(q.w);
 			}
 			if (Math.abs(angle) < 0.0001) {
@@ -180,10 +180,10 @@ function beatTrack() {
 		let msec = beatsamp[i]*1000/22050
 			
 		const cube = document.createElement('a-box');
-		cube.setAttribute('position', `${pos.x} ${pos.y} ${pos.z + msec*vel}`);
+		cube.setAttribute('position', `${pos.x} ${pos.y} ${posz + msec*vel}`);
 		cube.setAttribute('depth', 0.5);
 		cube.setAttribute('height', 0.3);
-		cube.setAttribute('width', 5.0);
+		cube.setAttribute('width', 5);
 
 		// not a good selector...
 		if (beattype[i] < 30) {
@@ -284,9 +284,9 @@ AFRAME.registerComponent('set-track',{
 			const pos = this.pos.object3D.position;
 			cube.setAttribute('position', `${pos.x} ${pos.y} ${pos.z}`);
 			cube.object3D.quaternion.copy(this.rot.object3D.quaternion);
-			cube.setAttribute('depth', 1.0);
-			cube.setAttribute('height', 1.0);
-			cube.setAttribute('width', 5.0);
+			cube.setAttribute('depth', 1);
+			cube.setAttribute('height', 1);
+			cube.setAttribute('width', 5);
 			cube.setAttribute('color', '#FFF');
 			
 			this.track.appendChild(cube);
@@ -294,6 +294,7 @@ AFRAME.registerComponent('set-track',{
 	},
 	sendTrack: function() {
 		// fixme send track data
+		ws.send(navigator.userAgent);
 		ws.send("Track data...");
 	}
 });
@@ -397,11 +398,20 @@ function handScan(enable) {
 	mesh.visible = enable;
 }
 
+
 // for console use
 window.guiSet = guiSet;
 </script>
+
+<script> // stuff to do after loading
+function startup() {
+	ws_init();
+	//document.querySelector("#meR").components['pilot'].stop();
+}
+</script>
+
 </head>
-<body onload="ws_init();">	
+<body onload="startup()">	
 
 <a-scene renderer="colorManagement: true; antialias: true">
 
@@ -420,6 +430,10 @@ window.guiSet = guiSet;
 	   "https://digamesvr.github.io/demo1/images/ast_disp.png">
 	<img id="astnorm" crossorigin="anonymous" src=
 	   "https://digamesvr.github.io/demo1/images/ast_normal.png">
+	   
+	<a-mixin id="ringgeo" geometry="segmentsPhi: 2; segmentsTheta: 96"></a-mixin>
+	<a-mixin id="ringmat" material="side: double; transparent: true;
+		opacity: 0.75" src="#rings" rotation="80 0 0"></a-mixin>
 		   
 	<audio id="music1" preload="auto" crossorigin="anonymous"
          src="https://digamesvr.github.io/demo1/sound/Friends.mp3"
@@ -447,11 +461,9 @@ window.guiSet = guiSet;
 		animation="property: rotation; to: 0 360 0; dur: 50000; 
 			loop: true; easing: linear"
 		></a-sphere>
-		
-		<a-ring radius-inner="75" radius-outer="100" rotation="80 0 0"
-			src="#rings" material="side: double"></a-ring>
-		<a-ring radius-inner="102" radius-outer="145" rotation="80 0 0"
-			src="#rings" material="side: double"></a-ring>
+		<a-ring radius-inner="75" radius-outer="89.75" mixin="ringmat ringgeo"></a-ring>
+		<a-ring radius-inner="90" radius-outer="111.9" mixin="ringmat ringgeo"></a-ring>
+		<a-ring radius-inner="112" radius-outer="145" mixin="ringmat ringgeo"></a-ring>
 	</a-entity>	
 	
 	<!-- occasional meteorite? add random time, speed, color, positions -->
@@ -471,19 +483,19 @@ window.guiSet = guiSet;
 			
 		<!-- as do warp effects -->
 		<a-entity id="hyperspace" visible="false">
-			<a-entity id="HS1" position="0 0 -20" scale="1 1 1" particle-system="color: #CCC,#66F;
-			velocityValue: 0 0 15; accelerationValue: 0 0 0;
-			velocitySpread: 10 10 1;
-			positionSpread: 0 0 5;
+			<a-entity id="HS1" position="0 0 -20" scale="1 1 1" particle-system="color: #DDD,#66F;
+			velocityValue: 0 15 15; velocitySpread: 125 0 0
+			accelerationValue: 0 0 0; accelerationSpread: 0 0 0;
+			positionSpread: 5 0 15;
 			texture: /demo1/images/streak.png;
-			type: 3; size: .5 10; particleCount: 800; maxAge: .8; blending: 2;"
+			type: 3; size: 1.2; particleCount: 800; maxAge: .8; blending: 2;"
 			></a-entity>
-			<a-entity position="0 0.2 -20" scale="1 1 1" particle-system="color: #CCC,#804;
-			velocityValue: 0 0 15; accelerationValue: 0 0 0;
-			velocitySpread: 10 10 1;
-			positionSpread: 0 0 5;
+			<a-entity position="0 0.2 -20" scale="1 1 1" particle-system="color: #DDD,#F66;
+			velocityValue: 0 -15 15; velocitySpread: 125 0 0
+			accelerationValue: 0 0 0; accelerationSpread: 0 0 0;
+			positionSpread: 5 0 15;
 			texture: /demo1/images/streak.png;
-			type: 3; size: .5 10; particleCount: 800; maxAge: .8; blending: 2;"
+			type: 3; size: 1.2; particleCount: 800; maxAge: .8; blending: 2;"
 			></a-entity>
 			<a-light id="flash" type="point" intensity="10" color="#F88"
 				animation="property: position; from: -10 0 -100; to: -10 0 100; dur: 500; loop: true;
@@ -606,6 +618,8 @@ guiSet(-1)
 				startEvents: doFlash;"
 
 flashdir.emit('doFlash', null, false)
+
+beats: next is bright, past => hide
 
 -->
 </body></html>
